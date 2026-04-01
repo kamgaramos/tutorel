@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Approvisionnement — BarManager CM{% endblock %}
+{% block page_title %}Approvisionnement{% endblock %}
+
+{% block content %}
+
+<div class="page-layout">
+
+    <!-- ── Formulaire appro ── -->
+    <div class="sidebar-form">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🚚 Nouvelle Livraison</span>
+            </div>
+            <div class="card-body">
+                <form id="form-appro" autocomplete="off">
+
+                    <div class="form-group">
+                        <label>Filtrer par société</label>
+                        <select id="appro-societe-filtre" onchange="filtrerProduitsAppro()">
+                            <option value="">Toutes</option>
+                            <option value="SABC">SABC</option>
+                            <option value="UCB">UCB</option>
+                            <option value="Guinness">Guinness</option>
+                            <option value="Sources du Pays">Sources du Pays</option>
+                            <option value="Autres Produits">Autres Produits</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appro-produit">Produit reçu</label>
+                        <select id="appro-produit" name="produit_id" required onchange="afficherInfoProduitAppro()">
+                            <option value="">— Sélectionner —</option>
+                        </select>
+                    </div>
+
+                    <!-- Info stock actuel -->
+                    <div class="stock-info-panel" id="stock-info-appro" style="display:none;">
+                        <div class="stock-info-ligne">
+                            <span>Stock actuel</span>
+                            <span id="appro-stock-actuel" class="bold">—</span>
+                        </div>
+                        <div class="stock-info-ligne">
+                            <span>Seuil d'alerte</span>
+                            <span id="appro-seuil" class="bold">—</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appro-quantite">Quantité reçue</label>
+                        <div class="qty-control">
+                            <button type="button" class="qty-btn" onclick="ajusterQteAppro(-1)">−</button>
+                            <input type="number" id="appro-quantite" name="quantite" min="1" value="1"
+                                onchange="calculerCoutUnitaire()" />
+                            <button type="button" class="qty-btn" onclick="ajusterQteAppro(1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appro-cout">Coût total payé (FCFA)</label>
+                        <input type="number" id="appro-cout" name="cout_total" min="0" value="0"
+                            oninput="calculerCoutUnitaire()" />
+                    </div>
+
+                    <!-- Cout unitaire calculé -->
+                    <div class="prix-panel" id="cout-unitaire-panel" style="display:none;">
+                        <div class="prix-ligne">
+                            <span class="prix-label">Coût unitaire calculé</span>
+                            <span class="prix-val" id="cout-unitaire">— FCFA</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appro-fournisseur">Fournisseur / livreur</label>
+                        <input type="text" id="appro-fournisseur" name="fournisseur" placeholder="Optionnel" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full btn-lg">
+                        📥 Enregistrer la Livraison
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Résumé dépenses du jour -->
+        <div class="card mt-1">
+            <div class="card-header">
+                <span class="card-title">💸 Dépenses du Jour</span>
+            </div>
+            <div class="card-body">
+                <div class="mini-kpis-vertical">
+                    <div class="mini-kpi-v">
+                        <div class="mini-kpi-val" id="appro-depenses-jour">0 FCFA</div>
+                        <div class="mini-kpi-label">Total dépensé aujourd'hui</div>
+                    </div>
+                    <div class="mini-kpi-v">
+                        <div class="mini-kpi-val" id="appro-nb-livraisons">0</div>
+                        <div class="mini-kpi-label">Livraisons enregistrées</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Historique ── -->
+    <div class="main-panel">
+
+        <!-- Filtres historique -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📋 Historique des Livraisons</span>
+                <div class="header-actions">
+                    <input type="date" id="appro-date-debut" class="input-sm" />
+                    <span class="date-sep">→</span>
+                    <input type="date" id="appro-date-fin" class="input-sm" />
+                    <button class="btn btn-ghost btn-sm" onclick="chargerHistoriqueAppro()">
+                        Filtrer
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p0">
+                <table class="data-table" id="table-appro">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Produit</th>
+                            <th>Société</th>
+                            <th>Qté Reçue</th>
+                            <th>Coût Total</th>
+                            <th>Coût Unitaire</th>
+                            <th>Fournisseur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7" class="table-empty">Aucun approvisionnement</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Graphique dépenses par semaine -->
+        <div class="card mt-1">
+            <div class="card-header">
+                <span class="card-title">📊 Dépenses d'approvisionnement</span>
+                <span class="card-badge">7 derniers jours</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart-depenses-appro" height="200"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerProduitsSelectAppro();
+        chargerHistoriqueAppro();
+        chargerDepensesJour();
+
+        // Dates par défaut : cette semaine
+        const aujourd = new Date();
+        const lundi = new Date(aujourd);
+        lundi.setDate(aujourd.getDate() - aujourd.getDay() + 1);
+        document.getElementById('appro-date-debut').value = lundi.toISOString().slice(0, 10);
+        document.getElementById('appro-date-fin').value = aujourd.toISOString().slice(0, 10);
+
+        document.getElementById('form-appro').addEventListener('submit', soumettreAppro);
+    });
+
+    function soumettreAppro(e) {
+        e.preventDefault();
+        const data = {
+            produit_id: document.getElementById('appro-produit').value,
+            quantite: parseInt(document.getElementById('appro-quantite').value),
+            cout_total: parseFloat(document.getElementById('appro-cout').value),
+            fournisseur: document.getElementById('appro-fournisseur').value
+        };
+        fetch('/api/approvisionnements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    afficherNotif('📥 Livraison enregistrée !', 'success');
+                    e.target.reset();
+                    document.getElementById('stock-info-appro').style.display = 'none';
+                    document.getElementById('cout-unitaire-panel').style.display = 'none';
+                    chargerHistoriqueAppro();
+                    chargerDepensesJour();
+                } else {
+                    afficherNotif(res.message || 'Erreur', 'error');
+                }
+            });
+    }
+
+    function calculerCoutUnitaire() {
+        const qte = parseFloat(document.getElementById('appro-quantite').value) || 0;
+        const cout = parseFloat(document.getElementById('appro-cout').value) || 0;
+        const panel = document.getElementById('cout-unitaire-panel');
+        if (qte > 0 && cout > 0) {
+            panel.style.display = 'block';
+            document.getElementById('cout-unitaire').textContent =
+                Math.round(cout / qte).toLocaleString('fr-FR') + ' FCFA';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+
+    function ajusterQteAppro(delta) {
+        const input = document.getElementById('appro-quantite');
+        input.value = Math.max(1, parseInt(input.value || 1) + delta);
+        calculerCoutUnitaire();
+    }
+</script>
+{% endblock %}

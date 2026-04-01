@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Produits — BarManager CM{% endblock %}
+{% block page_title %}Produits{% endblock %}
+
+{% block content %}
+
+<div class="produits-container">
+
+    <!-- ── Formulaire ajout ── -->
+    <div class="produit-form-card">
+        <div class="card-header">
+            <h2>➕ Ajouter un produit</h2>
+        </div>
+
+        <form id="form-ajout-produit" autocomplete="off">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="prod-societe">Société</label>
+                    <select id="prod-societe" name="societe" required>
+                        <option value="SABC">SABC</option>
+                        <option value="UCB">UCB</option>
+                        <option value="Guinness">Guinness</option>
+                        <option value="Sources du Pays">Sources du Pays</option>
+                        <option value="Autres Produits">Autres Produits</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-nom">Nom du produit</label>
+                    <input type="text" id="prod-nom" name="nom" placeholder="Ex: Mutzig 65cl" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-prix-achat">Prix achat (FCFA)</label>
+                    <input type="number" id="prod-prix-achat" name="prix_achat" min="0" value="0" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-prix-vente">Prix vente (FCFA)</label>
+                    <input type="number" id="prod-prix-vente" name="prix_vente" min="0" value="0" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-unite">Unité</label>
+                    <select id="prod-unite" name="unite">
+                        <option value="bouteille">Bouteille</option>
+                        <option value="canette">Canette</option>
+                        <option value="pack">Pack</option>
+                        <option value="litre">Litre</option>
+                        <option value="verre">Verre</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-stock-initial">Stock initial</label>
+                    <input type="number" id="prod-stock-initial" name="stock_initial" min="0" value="0" />
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-seuil">Seuil alerte</label>
+                    <input type="number" id="prod-seuil" name="seuil_alerte" min="1" value="10" />
+                </div>
+            </div>
+
+            <!-- Aperçu marge -->
+            <div class="marge-preview" id="marge-preview" style="display:none;">
+                <div class="marge-line">
+                    <span>Marge par unité</span>
+                    <span class="marge-value" id="marge-valeur">— FCFA</span>
+                </div>
+                <div class="marge-line">
+                    <span>Marge %</span>
+                    <span class="marge-pct" id="marge-pct">— %</span>
+                </div>
+            </div>
+
+            <!-- Bouton Ajouter (MÊME TAILLE QUE LES TABS) -->
+            <div class="form-actions">
+                <button type="submit" class="btn-ajouter-produit">Ajouter le produit</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── Section filtres ── -->
+    <div class="filters-section">
+        <div class="filters-header">
+            <h3>Filtres</h3>
+            <span class="produits-count" id="count-produits">0 produits</span>
+        </div>
+
+        <!-- Barre de filtres -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label>Société</label>
+                <select id="filtre-societe" onchange="filtrerProduits()">
+                    <option value="">Toutes</option>
+                    <option value="SABC">SABC</option>
+                    <option value="UCB">UCB</option>
+                    <option value="Guinness">Guinness</option>
+                    <option value="Sources du Pays">Sources du Pays</option>
+                    <option value="Autres Produits">Autres Produits</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Recherche</label>
+                <input type="text" id="recherche-produit" placeholder="Nom du produit…" oninput="filtrerProduits()" />
+            </div>
+        </div>
+
+        <!-- Tabs sociétés (TOUS IDENTIQUES) -->
+        <div class="societe-tabs">
+            <button class="societe-tab tous active" data-societe="tous">Tous</button>
+            <button class="societe-tab sabc" data-societe="sabc">SABC</button>
+            <button class="societe-tab ucb" data-societe="ucb">UCB</button>
+            <button class="societe-tab guinness" data-societe="guinness">GUINNESS</button>
+            <button class="societe-tab sources" data-societe="sources">SOURCES</button>
+            <button class="societe-tab autres" data-societe="autres">AUTRES</button>
+        </div>
+    </div>
+
+    <!-- ── Tableau des produits ── -->
+    <div class="produits-table-card">
+        <div class="produits-table-container">
+            <table class="produits-table" id="table-produits">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Société</th>
+                        <th>Prix Achat</th>
+                        <th>Prix Vente</th>
+                        <th>Marge</th>
+                        <th>Unité</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="loading-row">
+                        <td colspan="7" class="empty-table">
+                            <div class="loading-spinner">Chargement des produits...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal édition produit -->
+<div class="modal" id="modal-edit" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>✏️ Modifier le produit</h3>
+            <button class="modal-close" onclick="fermerModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-edit-produit">
+                <input type="hidden" id="edit-id" name="id" />
+
+                <div class="form-group">
+                    <label>Nom du produit</label>
+                    <input type="text" id="edit-nom" name="nom" required />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prix achat (FCFA)</label>
+                        <input type="number" id="edit-prix-achat" name="prix_achat" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>Prix vente (FCFA)</label>
+                        <input type="number" id="edit-prix-vente" name="prix_vente" min="0" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Seuil alerte</label>
+                        <input type="number" id="edit-seuil" name="seuil_alerte" min="1" />
+                    </div>
+                    <div class="form-group">
+                        <label>Unité</label>
+                        <select id="edit-unite" name="unite">
+                            <option value="bouteille">Bouteille</option>
+                            <option value="canette">Canette</option>
+                            <option value="pack">Pack</option>
+                            <option value="litre">Litre</option>
+                            <option value="verre">Verre</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-modal cancel" onclick="fermerModal()">Annuler</button>
+            <button type="submit" form="form-edit-produit" class="btn-modal save">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerProduits();
+
+        // Aperçu marge en temps réel
+        ['prod-prix-achat', 'prod-prix-vente'].forEach(id => {
+            document.getElementById(id).addEventListener('input', mettreAJourMarge);
+        });
+
+        // Gestion des tabs sociétés
+        document.querySelectorAll('.societe-tab').forEach(tab => {
+            tab.addEventListener('click', function () {
+                // Retirer la classe active de tous les tabs
+                document.querySelectorAll('.societe-tab').forEach(t => t.classList.remove('active'));
+                // Ajouter la classe active au tab cliqué
+                this.classList.add('active');
+                // Filtrer les produits par société
+                const societe = this.dataset.societe;
+                filtrerParSociete(societe);
+            });
+        });
+    });
+
+    function chargerProduits() {
+        // Simulation de chargement
+        setTimeout(() => {
+            const tbody = document.querySelector('#table-produits tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td><strong>Castel Beer</strong></td>
+                    <td><span class="badge sabc">SABC</span></td>
+                    <td class="prix-achat">350 FCFA</td>
+                    <td class="prix-vente">600 FCFA</td>
+                    <td>
+                        <div class="marge-cell">
+                            <span class="marge-indicator high"></span>
+                            <span class="marge-value high">250 FCFA</span>
+                        </div>
+                    </td>
+                    <td><span class="unit-badge">Bouteille</span></td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-action edit" onclick="editerProduit(1)">✏️</button>
+                            <button class="btn-action delete" onclick="supprimerProduit(1)">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Guinness</strong></td>
+                    <td><span class="badge guinness">Guinness</span></td>
+                    <td class="prix-achat">500 FCFA</td>
+                    <td class="prix-vente">900 FCFA</td>
+                    <td>
+                        <div class="marge-cell">
+                            <span class="marge-indicator high"></span>
+                            <span class="marge-value high">400 FCFA</span>
+                        </div>
+                    </td>
+                    <td><span class="unit-badge">Bouteille</span></td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-action edit" onclick="editerProduit(2)">✏️</button>
+                            <button class="btn-action delete" onclick="supprimerProduit(2)">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Tangui</strong></td>
+                    <td><span class="badge sources">Sources du Pays</span></td>
+                    <td class="prix-achat">150 FCFA</td>
+                    <td class="prix-vente">300 FCFA</td>
+                    <td>
+                        <div class="marge-cell">
+                            <span class="marge-indicator medium"></span>
+                            <span class="marge-value medium">150 FCFA</span>
+                        </div>
+                    </td>
+                    <td><span class="unit-badge">Bouteille</span></td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-action edit" onclick="editerProduit(3)">✏️</button>
+                            <button class="btn-action delete" onclick="supprimerProduit(3)">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            document.getElementById('count-produits').textContent = '3 produits';
+        }, 1000);
+    }
+
+    function mettreAJourMarge() {
+        const achat = parseFloat(document.getElementById('prod-prix-achat').value) || 0;
+        const vente = parseFloat(document.getElementById('prod-prix-vente').value) || 0;
+        const marge = vente - achat;
+        const pct = achat > 0 ? ((marge / achat) * 100).toFixed(1) : 0;
+
+        const preview = document.getElementById('marge-preview');
+        if (achat > 0 && vente > 0) {
+            preview.style.display = 'block';
+            document.getElementById('marge-valeur').textContent = marge + ' FCFA';
+            document.getElementById('marge-pct').textContent = pct + '%';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    function filtrerParSociete(societe) {
+        console.log('Filtre par société:', societe);
+        // Implémentez votre logique de filtrage ici
+    }
+
+    function filtrerProduits() {
+        const societe = document.getElementById('filtre-societe').value;
+        const recherche = document.getElementById('recherche-produit').value.toLowerCase();
+        console.log('Filtres:', { societe, recherche });
+        // Implémentez votre logique de filtrage ici
+    }
+
+    function editerProduit(id) {
+        document.getElementById('modal-edit').style.display = 'flex';
+        // Implémentez le chargement des données du produit ici
+    }
+
+    function fermerModal() {
+        document.getElementById('modal-edit').style.display = 'none';
+    }
+
+    function supprimerProduit(id) {
+        if (confirm('Supprimer ce produit ?')) {
+            console.log('Suppression produit:', id);
+            // Implémentez la suppression ici
+        }
+    }
+</script>
+{% endblock %}

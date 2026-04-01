@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Caisse du Jour — BarManager CM{% endblock %}
+{% block page_title %}Caisse{% endblock %}
+
+{% block content %}
+
+<div class="caisse-container">
+
+    <!-- ── Panneau de gauche : Nouvelle vente ── -->
+    <div class="caisse-form-card">
+        <div class="card-header">
+            <h2>Nouvelle vente</h2>
+        </div>
+
+        <form id="form-vente" autocomplete="off">
+            <div class="form-group">
+                <label for="vente-societe-filtre">Filtrer par société</label>
+                <select id="vente-societe-filtre" onchange="filtrerProduitsVente()">
+                    <option value="">Toutes les sociétés</option>
+                    <option value="SABC">SABC</option>
+                    <option value="UCB">UCB</option>
+                    <option value="Guinness">Guinness</option>
+                    <option value="Sources du Pays">Sources du Pays</option>
+                    <option value="Autres Produits">Autres Produits</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="vente-produit">Produit</label>
+                <select id="vente-produit" name="produit_id" required onchange="mettreAJourPrixVente()">
+                    <option value="">— Sélectionner un produit —</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="vente-quantite">Quantité vendue</label>
+                <div class="qty-control">
+                    <button type="button" class="qty-btn" onclick="ajusterQte(-1)">−</button>
+                    <input type="number" id="vente-quantite" name="quantite" min="1" value="1"
+                        onchange="mettreAJourTotalVente()" />
+                    <button type="button" class="qty-btn" onclick="ajusterQte(1)">+</button>
+                </div>
+            </div>
+
+            <!-- Panneau prix dynamique -->
+            <div class="prix-panel" id="prix-panel" style="display:none;">
+                <div class="prix-ligne">
+                    <span class="prix-label">Prix unitaire</span>
+                    <span class="prix-val" id="prix-unitaire">— FCFA</span>
+                </div>
+                <div class="prix-ligne">
+                    <span class="prix-label">Stock disponible</span>
+                    <span class="prix-val" id="stock-dispo">—</span>
+                </div>
+                <div class="prix-divider"></div>
+                <div class="prix-ligne prix-total">
+                    <span class="prix-label">Total à encaisser</span>
+                    <span class="prix-total-val" id="total-vente">— FCFA</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-encaisser">
+                Encaisser
+            </button>
+        </form>
+
+        <div class="separator">ou</div>
+
+        <button class="btn-annuler-vente" id="btn-annuler" onclick="annulerDerniereVente()">
+            Annuler la dernière vente
+        </button>
+
+        <!-- Mini KPIs -->
+        <div class="mini-kpis">
+            <div class="mini-kpi">
+                <div class="mini-kpi-val" id="caisse-total">0 FCFA</div>
+                <div class="mini-kpi-label">Encaissé aujourd'hui</div>
+            </div>
+            <div class="mini-kpi">
+                <div class="mini-kpi-val" id="caisse-nb">0</div>
+                <div class="mini-kpi-label">Transactions</div>
+            </div>
+            <div class="mini-kpi">
+                <div class="mini-kpi-val green" id="caisse-benefice">0 FCFA</div>
+                <div class="mini-kpi-label">Bénéfice</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panneau de droite : Ticket du jour ── -->
+    <div class="ticket-card">
+        <div class="ticket-header">
+            <h3>Ventes du jour</h3>
+            <div class="ticket-date" id="date-jour">--/--/----</div>
+        </div>
+
+        <div class="ticket-table-container">
+            <table class="ticket-table" id="table-ventes-jour">
+                <thead>
+                    <tr>
+                        <th>Heure</th>
+                        <th>Produit</th>
+                        <th>Société</th>
+                        <th>Qté</th>
+                        <th>Prix unit.</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" class="empty-table">Aucune vente aujourd'hui</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ticket-footer">
+            <div class="ticket-total">
+                <span class="ticket-total-label">Total encaissé</span>
+                <span class="ticket-total-value" id="table-total-encaisse">0 FCFA</span>
+            </div>
+            <button class="btn-refresh" onclick="chargerVentesJour()" title="Actualiser">⟳</button>
+        </div>
+
+        <!-- Graphique -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <h4>Ventes par heure</h4>
+                <span class="chart-badge">aujourd'hui</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="chart-ventes-heure"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/caisse.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerProduitsSelect();
+        chargerVentesJour();
+        chargerKPIsCaisse();
+
+        // Date du jour
+        document.getElementById('date-jour').textContent =
+            new Date().toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+        // Rafraîchissement auto
+        setInterval(() => {
+            chargerVentesJour();
+            chargerKPIsCaisse();
+            if (typeof chargerGraphVentesHeure === 'function') {
+                chargerGraphVentesHeure();
+            }
+        }, 20000);
+    });
+</script>
+{% endblock %}

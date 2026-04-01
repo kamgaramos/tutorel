@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Le Camer'Bar - Dashboard{% endblock %}</title>
+
+    <!-- Polices Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+        rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- CSS principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Styles supplémentaires par page -->
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+    <div class="main-wrapper">
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">🍺</span>
+                    <span class="logo-text">Camer'Bar</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                    <span class="toggle-icon">◀</span>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('index') }}"
+                            class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('produits_page') }}"
+                            class="nav-item {% if request.endpoint == 'produits_page' %}active{% endif %}">
+                            <span class="nav-icon">🍺</span>
+                            <span class="nav-text">Produits</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('caisse_page') }}"
+                            class="nav-item {% if request.endpoint == 'caisse_page' %}active{% endif %}">
+                            <span class="nav-icon">💰</span>
+                            <span class="nav-text">Caisse</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('stocks_page') }}"
+                            class="nav-item {% if request.endpoint == 'stocks_page' %}active{% endif %}">
+                            <span class="nav-icon">📦</span>
+                            <span class="nav-text">Stocks</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('appro_page') }}"
+                            class="nav-item {% if request.endpoint == 'appro_page' %}active{% endif %}">
+                            <span class="nav-icon">📥</span>
+                            <span class="nav-text">Appro.</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('tendances_page') }}"
+                            class="nav-item {% if request.endpoint == 'tendances_page' %}active{% endif %}">
+                            <span class="nav-icon">📈</span>
+                            <span class="nav-text">Tendances ML</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('bilan_page') }}"
+                            class="nav-item {% if request.endpoint == 'bilan_page' %}active{% endif %}">
+                            <span class="nav-icon">📋</span>
+                            <span class="nav-text">Bilan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('rapport_page') }}"
+                            class="nav-item {% if request.endpoint == 'rapport_page' %}active{% endif %}">
+                            <span class="nav-icon">📄</span>
+                            <span class="nav-text">Rapport</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="clock" id="clock">
+                    <div class="clock-time" id="clock-time">--:--:--</div>
+                    <div class="clock-date" id="clock-date">---</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ========== CONTENU PRINCIPAL ========== -->
+        <main class="main-content">
+            <!-- Top bar -->
+            <header class="top-bar">
+                <div class="page-title">
+                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                </div>
+                <div class="top-bar-actions">
+                    <div class="alert-badge" id="alert-badge">
+                        <span class="alert-icon">🔔</span>
+                        <span class="alert-count" id="alert-count">0</span>
+                    </div>
+                    <button class="btn-refresh"
+                        onclick="window.rafraichirStocks ? rafraichirStocks() : location.reload()">
+                        ⟳
+                    </button>
+                </div>
+            </header>
+
+            <!-- Zone de notification -->
+            <div id="caisse-notification" class="notification" style="display: none;"></div>
+            <div class="toast-container"></div>
+
+            <!-- Contenu de la page -->
+            <div class="content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts globaux -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script>
+        // Force le chargement des données sur toutes les pages
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('🔄 Initialisation forcée du chargement des données');
+
+            // Rafraîchir toutes les données après 1 seconde
+            setTimeout(function () {
+                // Déclencher tous les chargements possibles
+                if (typeof chargerKPIs === 'function') chargerKPIs();
+                if (typeof chargerStocksCritiques === 'function') chargerStocksCritiques();
+                if (typeof chargerRevenusSemaine === 'function') chargerRevenusSemaine();
+                if (typeof chargerTopProduits === 'function') chargerTopProduits();
+                if (typeof chargerRepartitionSocietes === 'function') chargerRepartitionSocietes();
+                if (typeof chargerGraphStocksBas === 'function') chargerGraphStocksBas();
+                if (typeof chargerProduits === 'function') chargerProduits();
+                if (typeof chargerStocks === 'function') chargerStocks();
+                if (typeof chargerVentesJour === 'function') chargerVentesJour();
+                if (typeof chargerAppro === 'function') chargerAppro();
+
+                console.log('✅ Tous les chargements ont été lancés');
+            }, 1000);
+
+            // Reforcer après 3 secondes si rien n'a changé
+            setTimeout(function () {
+                // Vérifier si les tableaux sont encore vides
+                document.querySelectorAll('tbody').forEach(tbody => {
+                    if (tbody.children.length === 0 || tbody.innerHTML.includes('Chargement')) {
+                        console.log('⚠️ Tableau vide détecté, injection de données démo');
+
+                        // Injecter une ligne de démo
+                        tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: #F4A261;">
+                                ⚡ Données de démonstration - Aucune donnée réelle trouvée
+                            </td>
+                        </tr>
+                    `;
+                    }
+                });
+            }, 3000);
+        });
+
+        // Fonction utilitaire pour les badges société
+        function badgeSociete(societe) {
+            if (!societe) return '<span class="badge">-</span>';
+            const slug = societe.toLowerCase().replace(/ /g, '-');
+            return `<span class="badge badge-${slug}">${societe}</span>`;
+        }
+
+        // Formatage FCFA
+        function formaterFCFA(montant) {
+            if (montant === undefined || montant === null) return '0 FCFA';
+            return montant.toLocaleString('fr-FR') + ' FCFA';
+        }
+    </script>
+    <script>
+        // FORCER LE REDIMENSIONNEMENT DES GRAPHIQUES
+        (function () {
+            // Attendre que tout soit chargé
+            window.addEventListener('load', function () {
+                console.log('📏 Redimensionnement forcé des graphiques...');
+
+                // Fonction pour redimensionner tous les graphiques Chart.js
+                function resizeAllCharts() {
+                    // Parcourir toutes les instances Chart.js
+                    if (window.Chart && Chart.instances) {
+                        Object.values(Chart.instances).forEach(chart => {
+                            if (chart) {
+                                // Forcer le redimensionnement
+                                chart.resize();
+
+                                // Réduire la taille des polices
+                                if (chart.config && chart.config.options) {
+                                    // Réduire les axes
+                                    if (chart.config.options.scales) {
+                                        if (chart.config.options.scales.x) {
+                                            chart.config.options.scales.x.ticks = {
+                                                ...chart.config.options.scales.x.ticks,
+                                                font: { size: 8 }
+                                            };
+                                        }
+                                        if (chart.config.options.scales.y) {
+                                            chart.config.options.scales.y.ticks = {
+                                                ...chart.config.options.scales.y.ticks,
+                                                font: { size: 8 }
+                                            };
+                                        }
+                                    }
+
+                                    // Réduire la légende
+                                    if (chart.config.options.plugins &&
+                                        chart.config.options.plugins.legend) {
+                                        chart.config.options.plugins.legend.labels = {
+                                            ...chart.config.options.plugins.legend.labels,
+                                            font: { size: 9 }
+                                        };
+                                    }
+                                }
+                                chart.update();
+                            }
+                        });
+                    }
+                    console.log('✅ Graphiques redimensionnés');
+                }
+
+                // Redimensionner immédiatement
+                setTimeout(resizeAllCharts, 500);
+
+                // Redimensionner après chaque changement de page
+                const observer = new MutationObserver(function (mutations) {
+                    mutations.forEach(function (mutation) {
+                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                            // Si des canvas sont ajoutés, redimensionner
+                            if (document.querySelector('canvas')) {
+                                setTimeout(resizeAllCharts, 200);
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(document.body, { childList: true, subtree: true });
+
+                // Redimensionner au redimensionnement de la fenêtre
+                window.addEventListener('resize', function () {
+                    setTimeout(resizeAllCharts, 100);
+                });
+            });
+        })();
+
+        // Fonction utilitaire pour forcer la hauteur des conteneurs
+        function fixChartContainers() {
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.style.height = '150px';
+                container.style.maxHeight = '150px';
+            });
+
+            document.querySelectorAll('canvas').forEach(canvas => {
+                canvas.style.height = '150px';
+                canvas.style.maxHeight = '150px';
+                canvas.style.width = '100%';
+            });
+        }
+
+        // Exécuter régulièrement
+        setInterval(fixChartContainers, 1000);
+    </script>
+    
+
+    
+
+    <!-- Scripts spécifiques par page (seront chargés dans les templates enfants) -->
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Stocks — BarManager CM{% endblock %}
+{% block page_title %}Gestion des Stocks{% endblock %}
+
+{% block content %}
+
+<div class="stocks-container">
+    <!-- ── Barre de résumé ── -->
+    <div class="stock-summary">
+        <div class="stock-stat stat-ok">
+            <div class="stat-val" id="stock-count-ok">—</div>
+            <div class="stat-label"> OK</div>
+        </div>
+        <div class="stock-stat stat-warning">
+            <div class="stat-val" id="stock-count-warning">—</div>
+            <div class="stat-label"> Faible</div>
+        </div>
+        <div class="stock-stat stat-danger">
+            <div class="stat-val" id="stock-count-danger">—</div>
+            <div class="stat-label"> Critique</div>
+        </div>
+        <div class="stock-stat stat-rupture">
+            <div class="stat-val" id="stock-count-rupture">—</div>
+            <div class="stat-label"> Rupture</div>
+        </div>
+    </div>
+
+    <div class="stocks-layout">
+        <!-- ── Colonne de gauche : Filtres & Ajustement ── -->
+        <div class="filters-card">
+            <div class="card-header">
+                <h3>Filtres</h3>
+            </div>
+
+            <div class="form-group">
+                <label>Société</label>
+                <select id="stock-filtre-societe" onchange="filtrerStocks()">
+                    <option value="">Toutes les sociétés</option>
+                    <option value="SABC">SABC</option>
+                    <option value="UCB">UCB</option>
+                    <option value="Guinness">Guinness</option>
+                    <option value="Sources du Pays">Sources du Pays</option>
+                    <option value="Autres Produits">Autres Produits</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>État du stock</label>
+                <select id="stock-filtre-etat" onchange="filtrerStocks()">
+                    <option value="">Tous les états</option>
+                    <option value="ok">✅ OK</option>
+                    <option value="warning">⚠️ Faible</option>
+                    <option value="danger">🔴 Critique</option>
+                    <option value="rupture">💀 Rupture</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Recherche</label>
+                <input type="text" id="stock-recherche" placeholder="Nom du produit…" oninput="filtrerStocks()" />
+            </div>
+
+            <button class="btn-refresh-stocks" onclick="chargerStocks()">
+                Actualiser
+            </button>
+
+            <!-- Ajustement manuel du stock -->
+            <div class="ajustement-card">
+                <div class="card-header">
+                    <h3>Ajuster le stock</h3>
+                </div>
+
+                <form id="form-ajuster-stock">
+                    <div class="form-group">
+                        <label>Produit</label>
+                        <select id="ajust-produit" name="produit_id">
+                            <option value="">— Sélectionner un produit —</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nouvelle quantité</label>
+                        <input type="number" id="ajust-quantite" name="quantite" min="0" value="0" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Motif</label>
+                        <select id="ajust-motif" name="motif">
+                            <option value="correction">Correction d'inventaire</option>
+                            <option value="casse">Casse / perte</option>
+                            <option value="offert">Offert / dégustation</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-ajuster">
+                        Mettre à jour
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── Colonne de droite : Tableau & Graphique ── -->
+        <div>
+            <div class="stocks-table-card">
+                <div class="stocks-table-header">
+                    <h3>État des stocks</h3>
+                    <span class="stocks-count" id="count-stock-affiche">0 produits</span>
+                </div>
+
+                <div class="stocks-table-container">
+                    <table class="stocks-table" id="table-stocks">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Société</th>
+                                <th>Stock actuel</th>
+                                <th>Seuil alerte</th>
+                                <th>État</th>
+                                <th>Progression</th>
+                                <th>Prix vente</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="loading-row">
+                                <td colspan="7">
+                                    <div class="loading-spinner">Chargement des stocks...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Graphique des stocks les plus bas -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h4>Les 15 stocks les plus bas</h4>
+                    <span class="chart-badge">À surveiller</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chart-stocks-bas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/stocks.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerStocks();
+        chargerProduitsSelectStock();
+
+        // Rafraîchissement automatique toutes les 60 secondes
+        setInterval(() => {
+            chargerStocks();
+            if (typeof chargerGraphStocksBas === 'function') {
+                chargerGraphStocksBas();
+            }
+        }, 60000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Tendances & ML — BarManager CM{% endblock %}
+{% block page_title %}Tendances & Prévisions{% endblock %}
+
+{% block content %}
+
+<!-- ── Bandeau avertissement si peu de données ── -->
+<div class="info-banner" id="banner-peu-donnees" style="display:none;">
+    ℹ️ Les prévisions nécessitent au minimum <strong>3 jours</strong> de données.
+    Continue d'enregistrer tes ventes et reviens ici.
+</div>
+
+<!-- ── Contrôles ML ── -->
+<div class="card mb-1">
+    <div class="card-body">
+        <div class="controls-row">
+
+            <div class="control-group">
+                <label>Société à analyser</label>
+                <select id="ml-societe" onchange="mettreAJourProduitsML()">
+                    <option value="">Toutes les sociétés</option>
+                    <option value="SABC">SABC</option>
+                    <option value="UCB">UCB</option>
+                    <option value="Guinness">Guinness</option>
+                    <option value="Sources du Pays">Sources du Pays</option>
+                    <option value="Autres Produits">Autres Produits</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Produit spécifique</label>
+                <select id="ml-produit">
+                    <option value="">Tous les produits</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Horizon de prévision</label>
+                <select id="ml-horizon">
+                    <option value="7">7 jours</option>
+                    <option value="14">14 jours</option>
+                    <option value="30">30 jours</option>
+                </select>
+            </div>
+
+            <div class="control-group align-bottom">
+                <button class="btn btn-primary" id="btn-lancer-ml" onclick="lancerPrevision()">
+                     Lancer la Prévision
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ── Graphique prévision principal ── -->
+<div class="card mb-1">
+    <div class="card-header">
+        <span class="card-title">🔮 Prévisions des Ventes</span>
+        <span class="card-badge" id="badge-horizon">7 prochains jours</span>
+    </div>
+    <div class="card-body">
+        <div id="ml-loading" class="loading-state" style="display:none;">
+            <div class="spinner"></div>
+            <span>Calcul des prévisions en cours…</span>
+        </div>
+        <canvas id="chart-prevision" height="300"></canvas>
+        <!-- Interprétation tendance -->
+        <div id="ml-interpretation" class="tendance-block" style="display:none;"></div>
+    </div>
+</div>
+
+<!-- ── Graphiques secondaires ── -->
+<div class="charts-row">
+
+    <div class="card chart-card">
+        <div class="card-header">
+            <span class="card-title">📅 Ventes par Jour de Semaine</span>
+            <span class="card-badge">7 derniers jours</span>
+        </div>
+        <div class="card-body">
+            <canvas id="chart-jour-semaine" height="260"></canvas>
+        </div>
+    </div>
+
+    <div class="card chart-card">
+        <div class="card-header">
+            <span class="card-title">🏆 Produits les Plus Consommés</span>
+            <span class="card-badge">cette semaine</span>
+        </div>
+        <div class="card-body">
+            <canvas id="chart-top-consommes" height="260"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Tableau recommandations stock ── -->
+<div class="card mt-1">
+    <div class="card-header">
+        <span class="card-title">📋 Recommandations de Réapprovisionnement</span>
+        <span class="card-badge badge-warning">Basé sur la tendance actuelle</span>
+    </div>
+    <div class="card-body p0">
+        <table class="data-table" id="table-recommandations">
+            <thead>
+                <tr>
+                    <th>Produit</th>
+                    <th>Société</th>
+                    <th>Stock Actuel</th>
+                    <th>Ventes Moy./Jour</th>
+                    <th>Jours Restants</th>
+                    <th>Urgence</th>
+                    <th>Qté Suggérée</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="7" class="table-empty">Lance la prévision pour voir les recommandations</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/ml.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        chargerProduitsML();
+        chargerTendancesJourSemaine();
+        chargerTopConsommes();
+        verifierDisponibiliteDonnees();
+    });
+</script>
+{% endblock %}
