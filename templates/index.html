@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Le Camer'Bar{% endblock %}
+{% block title %}Dashboard - Pharma Moderne{% endblock %}
 
 {% block page_title %}Tableau de bord{% endblock %}
 
@@ -8,6 +8,7 @@
 <div class="dashboard-container">
     <!-- ========== SECTION 1 : KPIS PRINCIPAUX ========== -->
     <div class="kpi-grid">
+        {% if session.get('role') == 'admin' %}
         <div class="kpi-card">
             <div class="kpi-icon">💰</div>
             <div class="kpi-content">
@@ -16,16 +17,18 @@
                 <div class="kpi-trend positive">+12% vs hier</div>
             </div>
         </div>
+        {% endif %}
 
         <div class="kpi-card">
             <div class="kpi-icon">📊</div>
             <div class="kpi-content">
-                <div class="kpi-title">Ventes</div>
+                <div class="kpi-title">Ventes du shift</div>
                 <div class="kpi-value" id="kpi-ventes">0</div>
-                <div class="kpi-trend">articles vendus</div>
+                <div class="kpi-trend">articles vendus aujourd'hui</div>
             </div>
         </div>
 
+        {% if session.get('role') == 'admin' %}
         <div class="kpi-card">
             <div class="kpi-icon">📈</div>
             <div class="kpi-content">
@@ -34,6 +37,7 @@
                 <div class="kpi-trend positive">+8%</div>
             </div>
         </div>
+        {% endif %}
 
         <div class="kpi-card">
             <div class="kpi-icon">⚠️</div>
@@ -45,6 +49,7 @@
         </div>
     </div>
 
+    {% if session.get('role') == 'admin' %}
     <!-- ========== SECTION 2 : GRAPHIQUES ========== -->
     <div class="charts-grid">
         <!-- Graphique revenus semaine -->
@@ -100,6 +105,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- ========== SECTION 3 : TABLEAU DES STOCKS CRITIQUES ========== -->
     <div class="table-card">
@@ -116,7 +122,7 @@
                 <thead>
                     <tr>
                         <th>Produit</th>
-                        <th>Société</th>
+                        <th>medocs</th>
                         <th>Stock actuel</th>
                         <th>Seuil alerte</th>
                         <th>État</th>
@@ -132,7 +138,7 @@
         </div>
     </div>
 
-    <!-- ========== SECTION 4 : ACTIVITÉ RÉCENTE ========== -->
+    <!-- ========== SECTION 4 : ACTIVITÉ RÉCENTE & IA ========== -->
     <div class="activity-grid">
         <!-- Dernières ventes -->
         <div class="activity-card">
@@ -153,6 +159,23 @@
             </div>
             <div class="alert-list" id="alertes-rapides">
                 <div class="alert-item loading">Chargement...</div>
+            </div>
+        </div>
+
+        <!-- Assistant IA intégré -->
+        <div class="activity-card chat-card">
+            <div class="activity-header">
+                <h3>🤖 Assistant Médical IA</h3>
+                <span class="badge badge-guinness">Online</span>
+            </div>
+            <div class="ai-chat-messages" id="dashboard-chat-messages">
+                <div class="message message-ai">
+                    Bonjour ! Je suis votre assistant Pharma Moderne. Posez-moi vos questions ici !
+                </div>
+            </div>
+            <div class="ai-chat-input">
+                <input type="text" id="dashboard-chat-input" placeholder="Posez une question...">
+                <button id="dashboard-chat-send">🚀</button>
             </div>
         </div>
     </div>
@@ -218,7 +241,7 @@
             const heure = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
             return `
                 <div class="activity-item">
-                    <div class="activity-icon">🍺</div>
+                    <div class="activity-icon">💊</div>
                     <div class="activity-details">
                         <div class="activity-title">${v.produit}</div>
                         <div class="activity-meta">${heure} · ${v.quantite} article(s)</div>
@@ -235,28 +258,28 @@
 
         container.innerHTML = `
             <div class="activity-item">
-                <div class="activity-icon">🍺</div>
+                <div class="activity-icon">💊</div>
                 <div class="activity-details">
-                    <div class="activity-title">Castel Beer</div>
-                    <div class="activity-meta">15:30 · 3 articles</div>
+                    <div class="activity-title">Amoxicilline 500mg</div>
+                    <div class="activity-meta">15:30 · 1 articles</div>
                 </div>
-                <div class="activity-amount">1 800 FCFA</div>
+                <div class="activity-amount">2 500 FCFA</div>
             </div>
             <div class="activity-item">
-                <div class="activity-icon">🍺</div>
+                <div class="activity-icon">💊</div>
                 <div class="activity-details">
-                    <div class="activity-title">Guinness</div>
-                    <div class="activity-meta">15:15 · 2 articles</div>
+                    <div class="activity-title">Paracétamol 500mg</div>
+                    <div class="activity-meta">15:15 · 5 articles</div>
                 </div>
-                <div class="activity-amount">1 800 FCFA</div>
+                <div class="activity-amount">2 500 FCFA</div>
             </div>
             <div class="activity-item">
-                <div class="activity-icon">🥤</div>
+                <div class="activity-icon">💊</div>
                 <div class="activity-details">
-                    <div class="activity-title">Tangui</div>
-                    <div class="activity-meta">14:50 · 5 articles</div>
+                    <div class="activity-title">Vitamine C 1000mg</div>
+                    <div class="activity-meta">14:50 · 2 articles</div>
                 </div>
-                <div class="activity-amount">1 500 FCFA</div>
+                <div class="activity-amount">5 600 FCFA</div>
             </div>
         `;
     }
@@ -293,67 +316,28 @@
             <div class="alert-item critique">
                 <div class="alert-icon">🔴</div>
                 <div class="alert-content">
-                    <div class="alert-title">Castel Beer</div>
-                    <div class="alert-meta">Stock: 2 / Seuil: 10</div>
+                    <div class="alert-title">Amoxicilline 500mg</div>
+                    <div class="alert-meta">Stock: 2 / Seuil: 20</div>
                 </div>
             </div>
             <div class="alert-item critique">
                 <div class="alert-icon">🔴</div>
                 <div class="alert-content">
-                    <div class="alert-title">Whisky</div>
+                    <div class="alert-title">Tensiomètre Brassard</div>
                     <div class="alert-meta">Stock: 1 / Seuil: 5</div>
                 </div>
             </div>
             <div class="alert-item faible">
                 <div class="alert-icon">⚠️</div>
                 <div class="alert-content">
-                    <div class="alert-title">Tangui</div>
-                    <div class="alert-meta">Stock: 5 / Seuil: 15</div>
+                    <div class="alert-title">Ibuprofène 400mg</div>
+                    <div class="alert-meta">Stock: 10 / Seuil: 30</div>
                 </div>
             </div>
         `;
     }
 </script>
 <tbody>
-    <!-- Données de démonstration visibles immédiatement -->
-    <tr>
-        <td><strong>Castel Beer</strong></td>
-        <td><span class="badge badge-sabc">SABC</span></td>
-        <td class="stock-critical">2</td>
-        <td>10</td>
-        <td><span class="stock-critical">🔴 Critique</span></td>
-        <td>
-            <div class="progress">
-                <div class="progress-bar danger" style="width: 20%"></div>
-            </div>
-        </td>
-        <td>600 FCFA</td>
-    </tr>
-    <tr>
-        <td><strong>Guinness</strong></td>
-        <td><span class="badge badge-guinness">Guinness</span></td>
-        <td class="stock-low">5</td>
-        <td>15</td>
-        <td><span class="stock-low">⚠️ Faible</span></td>
-        <td>
-            <div class="progress">
-                <div class="progress-bar warning" style="width: 33%"></div>
-            </div>
-        </td>
-        <td>900 FCFA</td>
-    </tr>
-    <tr>
-        <td><strong>Mützig</strong></td>
-        <td><span class="badge badge-sabc">SABC</span></td>
-        <td>25</td>
-        <td>10</td>
-        <td><span class="stock-ok">✅ OK</span></td>
-        <td>
-            <div class="progress">
-                <div class="progress-bar success" style="width: 100%"></div>
-            </div>
-        </td>
-        <td>650 FCFA</td>
-    </tr>
+    <!-- Données chargées dynamiquement -->
 </tbody>
 {% endblock %}

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Le Camer'Bar - Dashboard{% endblock %}</title>
+    <title>{% block title %}Pharma Moderne - Dashboard{% endblock %}</title>
 
     <!-- Polices Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,8 +29,8 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <span class="logo-icon">🍺</span>
-                    <span class="logo-text">Camer'Bar</span>
+                    <span class="logo-icon">💊</span>
+                    <span class="logo-text">Pharma Moderne</span>
                 </div>
                 <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
                     <span class="toggle-icon">◀</span>
@@ -49,7 +49,7 @@
                     <li>
                         <a href="{{ url_for('produits_page') }}"
                             class="nav-item {% if request.endpoint == 'produits_page' %}active{% endif %}">
-                            <span class="nav-icon">🍺</span>
+                            <span class="nav-icon">💊</span>
                             <span class="nav-text">Produits</span>
                         </a>
                     </li>
@@ -68,41 +68,56 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('appro_page') }}"
-                            class="nav-item {% if request.endpoint == 'appro_page' %}active{% endif %}">
-                            <span class="nav-icon">📥</span>
-                            <span class="nav-text">Appro.</span>
+                        <a href="{{ url_for('appro_page') }}" class="nav-item {% if request.endpoint == 'appro_page' %}active{% endif %}">
+                            <span class="nav-icon">📥</span><span class="nav-text">Appro.</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('tendances_page') }}"
-                            class="nav-item {% if request.endpoint == 'tendances_page' %}active{% endif %}">
-                            <span class="nav-icon">📈</span>
-                            <span class="nav-text">Tendances ML</span>
+                        <a href="{{ url_for('tendances_page') }}" class="nav-item {% if request.endpoint == 'tendances_page' %}active{% endif %}">
+                            <span class="nav-icon">📈</span><span class="nav-text">Tendances ML</span>
+                        </a>
+                    </li>
+                    {% if session.get('role') == 'admin' %}
+                    <li>
+                        <a href="{{ url_for('bilan_page') }}" class="nav-item {% if request.endpoint == 'bilan_page' %}active{% endif %}">
+                            <span class="nav-icon">📋</span><span class="nav-text">Bilan</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('bilan_page') }}"
-                            class="nav-item {% if request.endpoint == 'bilan_page' %}active{% endif %}">
-                            <span class="nav-icon">📋</span>
-                            <span class="nav-text">Bilan</span>
+                        <a href="{{ url_for('rapport_page') }}" class="nav-item {% if request.endpoint == 'rapport_page' %}active{% endif %}">
+                            <span class="nav-icon">📄</span><span class="nav-text">Rapport</span>
+                        </a>
+                    </li>
+                    <li style="margin-top: 20px;">
+                        <a href="{{ url_for('admin.employes_page') }}" class="nav-item {% if request.endpoint == 'admin.employes_page' %}active{% endif %}">
+                            <span class="nav-icon">👥</span><span class="nav-text">Employés</span>
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('rapport_page') }}"
-                            class="nav-item {% if request.endpoint == 'rapport_page' %}active{% endif %}">
-                            <span class="nav-icon">📄</span>
-                            <span class="nav-text">Rapport</span>
+                        <a href="{{ url_for('admin.parametres_page') }}" class="nav-item {% if request.endpoint == 'admin.parametres_page' %}active{% endif %}">
+                            <span class="nav-icon">⚙️</span><span class="nav-text">Paramètres</span>
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
             </nav>
 
             <div class="sidebar-footer">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <div style="font-weight: bold; margin-bottom: 5px; color:#2c3e50; font-size: 1.1em;">
+                        {{ session.get('nom', 'Utilisateur') }}
+                    </div>
+                    <span class="badge" style="background:#dee2e6; color:#2c3e50; font-size: 0.8em;">
+                        {% if session.get('role') == 'admin' %}🛡️ Administrateur{% else %}👨‍⚕️ Vente{% endif %}
+                    </span>
+                </div>
                 <div class="clock" id="clock">
                     <div class="clock-time" id="clock-time">--:--:--</div>
                     <div class="clock-date" id="clock-date">---</div>
                 </div>
+                <a href="{{ url_for('logout') }}" style="display: block; margin-top: 15px; padding: 10px; text-align: center; color: #E63946; background: #ffebe9; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 0.9em;">
+                    🔓 Changer de profil
+                </a>
             </div>
         </aside>
 
@@ -136,49 +151,35 @@
         </main>
     </div>
 
+    <!-- Assistant Médical IA -->
+    <div class="ai-chat-bubble" id="ai-chat-bubble" title="Assistant Médical IA">
+        <span>🤖</span>
+    </div>
+
+    <div class="ai-chat-container" id="ai-chat-container">
+        <div class="ai-chat-header">
+            <h4><span>💊</span> Assistant Pharma</h4>
+            <button class="ai-chat-close" id="ai-chat-close">×</button>
+        </div>
+        <div class="ai-chat-messages" id="ai-chat-messages">
+            <div class="message message-ai">
+                Bonjour ! Je suis l'assistant Pharma Moderne. Posez-moi vos questions sur les dosages ou l'utilisation des médicaments.
+            </div>
+        </div>
+        <div class="ai-chat-input">
+            <input type="text" id="ai-chat-input-text" placeholder="Posez votre question...">
+            <button id="ai-chat-send">🚀</button>
+        </div>
+    </div>
+
     <!-- Scripts globaux -->
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ai_chat.js') }}"></script>
     <script>
-        // Force le chargement des données sur toutes les pages
+        // Initialisation globale légère
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('🔄 Initialisation forcée du chargement des données');
-
-            // Rafraîchir toutes les données après 1 seconde
-            setTimeout(function () {
-                // Déclencher tous les chargements possibles
-                if (typeof chargerKPIs === 'function') chargerKPIs();
-                if (typeof chargerStocksCritiques === 'function') chargerStocksCritiques();
-                if (typeof chargerRevenusSemaine === 'function') chargerRevenusSemaine();
-                if (typeof chargerTopProduits === 'function') chargerTopProduits();
-                if (typeof chargerRepartitionSocietes === 'function') chargerRepartitionSocietes();
-                if (typeof chargerGraphStocksBas === 'function') chargerGraphStocksBas();
-                if (typeof chargerProduits === 'function') chargerProduits();
-                if (typeof chargerStocks === 'function') chargerStocks();
-                if (typeof chargerVentesJour === 'function') chargerVentesJour();
-                if (typeof chargerAppro === 'function') chargerAppro();
-
-                console.log('✅ Tous les chargements ont été lancés');
-            }, 1000);
-
-            // Reforcer après 3 secondes si rien n'a changé
-            setTimeout(function () {
-                // Vérifier si les tableaux sont encore vides
-                document.querySelectorAll('tbody').forEach(tbody => {
-                    if (tbody.children.length === 0 || tbody.innerHTML.includes('Chargement')) {
-                        console.log('⚠️ Tableau vide détecté, injection de données démo');
-
-                        // Injecter une ligne de démo
-                        tbody.innerHTML = `
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 20px; color: #F4A261;">
-                                ⚡ Données de démonstration - Aucune donnée réelle trouvée
-                            </td>
-                        </tr>
-                    `;
-                    }
-                });
-            }, 3000);
+            console.log('Pharma Moderne - Initialisation');
         });
 
         // Fonction utilitaire pour les badges société

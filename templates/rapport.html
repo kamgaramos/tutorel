@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Rapport Journalier — BarManager CM{% endblock %}
+{% block title %}Rapport Journalier — Pharma Moderne{% endblock %}
 {% block page_title %}Rapport Journalier{% endblock %}
 
 {% block content %}
@@ -37,7 +37,7 @@
             <span class="rapport-icon">📄</span>
             <div>
                 <div class="rapport-date-label" id="rapport-date-label">—</div>
-                <div class="rapport-sub">Bilan de fin de journée — Barman</div>
+                <div class="rapport-sub">Bilan de fin de journée — Pharmacien</div>
             </div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="window.print()">
@@ -181,7 +181,7 @@
 
 {% endblock %}
 
-{% block extra_scripts %}
+{% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         setDateRapport('today');

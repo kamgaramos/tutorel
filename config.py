@@ -3,26 +3,29 @@ import os
 
 # Chemins
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, 'data', 'bar.sqlite')
+DB_PATH = os.path.join(BASE_DIR, 'data', 'pharma.sqlite')
 
-# Constantes bar
-NOM_BAR = "Le Camer'Bar"
+# Constantes pharma
+NOM_BAR = "Pharma Moderne"
 DEVISE = "FCFA"
 
 # Seuils stock par défaut
 SEUIL_STOCK_DEFAUT = 10
 ALERTE_CRITIQUE_RATIO = 0.5  # En dessous de 50% du seuil → critique
 
-# Catégories de sociétés (5 comme demandé)
-SOCIETES = ['SABC', 'UCB', 'Guinness', 'Sources du Pays', 'Autres Produits']
+# Admin PIN
+ADMIN_PIN = "1234"
+
+# Catégories de sociétés (Pharmacie)
+SOCIETES = ['Antibiotiques', 'Analgésiques', 'Vitamines', 'Dermatologie', 'Matériel Médical']
 
 # Couleurs associées (pour les graphiques)
 COULEURS_SOCIETES = {
-    'SABC': '#E63946',
-    'UCB': '#F4A261',
-    'Guinness': '#2EC4B6',
-    'Sources du Pays': '#4A90D9',
-    'Autres Produits': '#9B5DE5'
+    'Antibiotiques': '#2A9D8F',
+    'Analgésiques': '#E76F51',
+    'Vitamines': '#F4A261',
+    'Dermatologie': '#E9C46A',
+    'Matériel Médical': '#264653'
 }
 
 # Configuration ML

@@ -1,5 +1,5 @@
 # routes/ventes.py - Routes pour l'enregistrement des ventes
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from database import get_db
 from datetime import datetime, timedelta
 
@@ -53,10 +53,11 @@ def enregistrer_vente():
             prix_final = prix_unitaire if prix_unitaire else produit['prix_vente']
             
             # Enregistrer la vente
+            vendeur_id = session.get('user_id')
             cursor.execute('''
-                INSERT INTO ventes (produit_id, quantite, prix_unitaire)
-                VALUES (?, ?, ?)
-            ''', (produit_id, quantite, prix_final))
+                INSERT INTO ventes (produit_id, quantite, prix_unitaire, vendeur_id)
+                VALUES (?, ?, ?, ?)
+            ''', (produit_id, quantite, prix_final, vendeur_id))
             
             # Mettre à jour le stock
             cursor.execute('''

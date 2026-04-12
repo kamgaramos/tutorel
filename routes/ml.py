@@ -95,7 +95,7 @@ def get_trends():
         conn = get_db()
         cursor = conn.cursor()
         
-        societes = ['SABC', 'UCB', 'Guinness', 'Sources du Pays', 'Autres Produits']
+        societes = ['Antibiotiques', 'Analgésiques', 'Vitamines', 'Dermatologie', 'Matériel Médical']
         dates = []
         trends = []
         

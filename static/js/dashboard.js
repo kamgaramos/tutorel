@@ -317,19 +317,19 @@ function chargerKPIs() {
             } else {
                 console.error("❌ Erreur dans les données:", data.message);
                 // Fallback
-                setElementText('kpi-revenus', '245 500 FCFA');
-                setElementText('kpi-ventes', '42 articles');
-                setElementText('kpi-benefice', '82 350 FCFA');
-                setElementText('kpi-alertes', '3 produits');
+                setElementText('kpi-revenus', '75 500 FCFA');
+                setElementText('kpi-ventes', '12 articles');
+                setElementText('kpi-benefice', '22 350 FCFA');
+                setElementText('kpi-alertes', '2 produits');
             }
         })
         .catch(error => {
             console.error("❌ Erreur chargement KPIs:", error);
             // Fallback en cas d'erreur
-            document.getElementById('kpi-revenus').textContent = '245 500 FCFA';
-            document.getElementById('kpi-ventes').textContent = '42 articles';
-            document.getElementById('kpi-benefice').textContent = '82 350 FCFA';
-            document.getElementById('kpi-alertes').textContent = '3 produits';
+            document.getElementById('kpi-revenus').textContent = '75 500 FCFA';
+            document.getElementById('kpi-ventes').textContent = '12 articles';
+            document.getElementById('kpi-benefice').textContent = '22 350 FCFA';
+            document.getElementById('kpi-alertes').textContent = '2 produits';
         });
 }
 
@@ -365,24 +365,24 @@ function chargerStocksCritiques() {
                 // Données de démonstration
                 tbody.innerHTML = `
                     <tr>
-                        <td><strong>Castel Beer</strong></td>
-                        <td>${badgeSociete('SABC')}</td>
+                        <td><strong>Amoxicilline 500mg</strong></td>
+                        <td>${badgeSociete('Antibiotiques')}</td>
                         <td><strong style="color: var(--red)">2</strong></td>
-                        <td>10</td>
+                        <td>20</td>
                         <td><span style="color:var(--red)">🔴 Critique</span></td>
                     </tr>
                     <tr>
-                        <td><strong>Whisky</strong></td>
-                        <td>${badgeSociete('Autres Produits')}</td>
+                        <td><strong>Tensiomètre Brassard</strong></td>
+                        <td>${badgeSociete('Matériel Médical')}</td>
                         <td><strong style="color: var(--red)">1</strong></td>
                         <td>5</td>
                         <td><span style="color:var(--red)">🔴 Critique</span></td>
                     </tr>
                     <tr>
-                        <td><strong>Tangui</strong></td>
-                        <td>${badgeSociete('Sources du Pays')}</td>
-                        <td><strong style="color: var(--yellow)">5</strong></td>
-                        <td>15</td>
+                        <td><strong>Ibuprofène 400mg</strong></td>
+                        <td>${badgeSociete('Analgésiques')}</td>
+                        <td><strong style="color: var(--yellow)">10</strong></td>
+                        <td>30</td>
                         <td><span style="color:var(--yellow)">⚠️ Faible</span></td>
                     </tr>
                 `;
@@ -395,15 +395,15 @@ function chargerStocksCritiques() {
             if (tbody) {
                 tbody.innerHTML = `
                     <tr>
-                        <td><strong>Castel Beer</strong></td>
-                        <td>${badgeSociete('SABC')}</td>
+                        <td><strong>Amoxicilline 500mg</strong></td>
+                        <td>${badgeSociete('Antibiotiques')}</td>
                         <td><strong style="color: var(--red)">2</strong></td>
-                        <td>10</td>
+                        <td>20</td>
                         <td><span style="color:var(--red)">🔴 Critique</span></td>
                     </tr>
                     <tr>
-                        <td><strong>Whisky</strong></td>
-                        <td>${badgeSociete('Autres Produits')}</td>
+                        <td><strong>Tensiomètre Brassard</strong></td>
+                        <td>${badgeSociete('Matériel Médical')}</td>
                         <td><strong style="color: var(--red)">1</strong></td>
                         <td>5</td>
                         <td><span style="color:var(--red)">🔴 Critique</span></td>

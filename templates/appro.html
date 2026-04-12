@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Approvisionnement — BarManager CM{% endblock %}
+{% block title %}Approvisionnement — Pharma Moderne{% endblock %}
 {% block page_title %}Approvisionnement{% endblock %}
 
 {% block content %}
@@ -20,11 +20,11 @@
                         <label>Filtrer par société</label>
                         <select id="appro-societe-filtre" onchange="filtrerProduitsAppro()">
                             <option value="">Toutes</option>
-                            <option value="SABC">SABC</option>
-                            <option value="UCB">UCB</option>
-                            <option value="Guinness">Guinness</option>
-                            <option value="Sources du Pays">Sources du Pays</option>
-                            <option value="Autres Produits">Autres Produits</option>
+                            <option value="Antibiotiques">Antibiotiques</option>
+                            <option value="Analgésiques">Analgésiques</option>
+                            <option value="Vitamines">Vitamines</option>
+                            <option value="Dermatologie">Dermatologie</option>
+                            <option value="Matériel Médical">Matériel Médical</option>
                         </select>
                     </div>
 
@@ -157,13 +157,16 @@
 
 {% endblock %}
 
-{% block extra_scripts %}
+{% block scripts %}
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
+    let tousLesProduits = [];
+
     document.addEventListener('DOMContentLoaded', () => {
         chargerProduitsSelectAppro();
         chargerHistoriqueAppro();
         chargerDepensesJour();
+        chargerGraphiqueDepenses();
 
         // Dates par défaut : cette semaine
         const aujourd = new Date();
@@ -175,15 +178,120 @@
         document.getElementById('form-appro').addEventListener('submit', soumettreAppro);
     });
 
+    async function chargerProduitsSelectAppro() {
+        try {
+            const response = await fetch('/api/produits/');
+            const data = await response.json();
+            if (data.success) {
+                tousLesProduits = data.produits;
+                remplirSelectProduits(tousLesProduits);
+            }
+        } catch (error) {
+            console.error('Erreur chargement produits:', error);
+        }
+    }
+
+    function remplirSelectProduits(produits) {
+        const select = document.getElementById('appro-produit');
+        const currentVal = select.value;
+        
+        select.innerHTML = '<option value="">— Sélectionnée —</option>' + 
+            produits.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
+        
+        select.value = currentVal;
+    }
+
+    function filtrerProduitsAppro() {
+        const societe = document.getElementById('appro-societe-filtre').value;
+        if (!societe) {
+            remplirSelectProduits(tousLesProduits);
+        } else {
+            const filtrés = tousLesProduits.filter(p => p.societe === societe);
+            remplirSelectProduits(filtrés);
+        }
+    }
+
+    function afficherInfoProduitAppro() {
+        const id = document.getElementById('appro-produit').value;
+        const panel = document.getElementById('stock-info-appro');
+        
+        if (!id) {
+            panel.style.display = 'none';
+            return;
+        }
+
+        fetch(`/api/produits/${id}`)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    panel.style.display = 'block';
+                    document.getElementById('appro-stock-actuel').textContent = res.produit.stock_actuel || 0;
+                    document.getElementById('appro-seuil').textContent = res.produit.seuil_alerte;
+                    
+                    // Pré-remplir le prix d'achat s'il est connu
+                    const qte = parseInt(document.getElementById('appro-quantite').value) || 1;
+                    document.getElementById('appro-cout').value = res.produit.prix_achat * qte;
+                    calculerCoutUnitaire();
+                }
+            });
+    }
+
+    function chargerHistoriqueAppro() {
+        const debut = document.getElementById('appro-date-debut').value;
+        const fin = document.getElementById('appro-date-fin').value;
+        
+        fetch(`/api/appro/historique?debut=${debut}&fin=${fin}`)
+            .then(r => r.json())
+            .then(res => {
+                const tbody = document.querySelector('#table-appro tbody');
+                if (res.success && res.approvisionnements.length > 0) {
+                    tbody.innerHTML = res.approvisionnements.map(a => `
+                        <tr>
+                            <td>${new Date(a.date_appro).toLocaleDateString()}</td>
+                            <td><strong>${a.produit}</strong></td>
+                            <td>${badgeSociete(a.societe)}</td>
+                            <td>${a.quantite}</td>
+                            <td>${formaterFCFA(a.quantite * a.prix_achat_unitaire)}</td>
+                            <td>${formaterFCFA(a.prix_achat_unitaire)}</td>
+                            <td>${a.fournisseur || '—'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Aucun approvisionnement trouvé</td></tr>';
+                }
+            });
+    }
+
+    function chargerDepensesJour() {
+        fetch('/api/appro/stats')
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    document.getElementById('appro-depenses-jour').textContent = formaterFCFA(res.total_depenses);
+                    document.getElementById('appro-nb-livraisons').textContent = res.nb_appro;
+                }
+            });
+    }
+
     function soumettreAppro(e) {
         e.preventDefault();
+        const id = document.getElementById('appro-produit').value;
+        const qte = parseInt(document.getElementById('appro-quantite').value);
+        const coutTotal = parseFloat(document.getElementById('appro-cout').value);
+        
+        if (!id || !qte || isNaN(coutTotal)) {
+            afficherNotif('Veuillez remplir tous les champs', 'warning');
+            return;
+        }
+
         const data = {
-            produit_id: document.getElementById('appro-produit').value,
-            quantite: parseInt(document.getElementById('appro-quantite').value),
-            cout_total: parseFloat(document.getElementById('appro-cout').value),
-            fournisseur: document.getElementById('appro-fournisseur').value
+            produit_id: parseInt(id),
+            quantite: qte,
+            prix_achat_unitaire: coutTotal / qte,
+            note: document.getElementById('appro-fournisseur').value
         };
-        fetch('/api/approvisionnements', {
+
+        fetch('/api/appro/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -191,15 +299,19 @@
             .then(r => r.json())
             .then(res => {
                 if (res.success) {
-                    afficherNotif('📥 Livraison enregistrée !', 'success');
+                    afficherNotif('📥 Livraison enregistrée avec succès !', 'success');
                     e.target.reset();
                     document.getElementById('stock-info-appro').style.display = 'none';
                     document.getElementById('cout-unitaire-panel').style.display = 'none';
                     chargerHistoriqueAppro();
                     chargerDepensesJour();
+                    if (typeof chargerGraphiqueDepenses === 'function') chargerGraphiqueDepenses();
                 } else {
-                    afficherNotif(res.message || 'Erreur', 'error');
+                    afficherNotif(res.message || 'Erreur lors de l\'enregistrement', 'error');
                 }
+            })
+            .catch(err => {
+                afficherNotif('Erreur réseau', 'error');
             });
     }
 
@@ -220,6 +332,40 @@
         const input = document.getElementById('appro-quantite');
         input.value = Math.max(1, parseInt(input.value || 1) + delta);
         calculerCoutUnitaire();
+    }
+
+    function chargerGraphiqueDepenses() {
+        fetch('/api/appro/depenses-semaine')
+            .then(r => r.json())
+            .then(data => {
+                const ctx = document.getElementById('chart-depenses-appro').getContext('2d');
+                if (window.myChartAppro) window.myChartAppro.destroy();
+                
+                window.myChartAppro = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.date),
+                        datasets: [{
+                            label: 'Dépenses (FCFA)',
+                            data: data.map(d => d.montant),
+                            borderColor: '#2A9D8F',
+                            backgroundColor: 'rgba(42, 157, 143, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            });
     }
 </script>
 {% endblock %}

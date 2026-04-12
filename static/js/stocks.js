@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td><strong>${m.produit}</strong></td>
                     <td class="${typeClass}">${typeIcon} ${m.type === 'ajout' ? '+' : '-'}${m.quantite}</td>
                     <td>${m.raison || '—'}</td>
-                    <td>${m.responsable || 'Barman'}</td>
+                    <td>${m.responsable || 'Pharmacien'}</td>
                 </tr>
             `;
         }).join('');

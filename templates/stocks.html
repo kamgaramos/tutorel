@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Stocks — BarManager CM{% endblock %}
+{% block title %}Stocks — Pharma Moderne{% endblock %}
 {% block page_title %}Gestion des Stocks{% endblock %}
 
 {% block content %}
@@ -8,21 +8,13 @@
 <div class="stocks-container">
     <!-- ── Barre de résumé ── -->
     <div class="stock-summary">
-        <div class="stock-stat stat-ok">
-            <div class="stat-val" id="stock-count-ok">—</div>
-            <div class="stat-label"> OK</div>
+        <div class="stock-stat stat-valeur">
+            <div class="stat-val" id="stock-valeur">— FCFA</div>
+            <div class="stat-label">Valeur du Stock</div>
         </div>
-        <div class="stock-stat stat-warning">
-            <div class="stat-val" id="stock-count-warning">—</div>
-            <div class="stat-label"> Faible</div>
-        </div>
-        <div class="stock-stat stat-danger">
-            <div class="stat-val" id="stock-count-danger">—</div>
-            <div class="stat-label"> Critique</div>
-        </div>
-        <div class="stock-stat stat-rupture">
-            <div class="stat-val" id="stock-count-rupture">—</div>
-            <div class="stat-label"> Rupture</div>
+        <div class="stock-stat stat-count">
+            <div class="stat-val" id="stock-count">—</div>
+            <div class="stat-label">Produits Référencés</div>
         </div>
     </div>
 
@@ -34,36 +26,35 @@
             </div>
 
             <div class="form-group">
-                <label>Société</label>
-                <select id="stock-filtre-societe" onchange="filtrerStocks()">
-                    <option value="">Toutes les sociétés</option>
-                    <option value="SABC">SABC</option>
-                    <option value="UCB">UCB</option>
-                    <option value="Guinness">Guinness</option>
-                    <option value="Sources du Pays">Sources du Pays</option>
-                    <option value="Autres Produits">Autres Produits</option>
+                <label>Catégorie</label>
+                <select id="filter-societe">
+                    <option value="tous">Toutes les catégories</option>
+                    <option value="Antibiotiques">Antibiotiques</option>
+                    <option value="Analgésiques">Analgésiques</option>
+                    <option value="Vitamines">Vitamines</option>
+                    <option value="Dermatologie">Dermatologie</option>
+                    <option value="Matériel Médical">Matériel Médical</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label>État du stock</label>
-                <select id="stock-filtre-etat" onchange="filtrerStocks()">
-                    <option value="">Tous les états</option>
+                <select id="filter-stock">
+                    <option value="tous">Tous les états</option>
                     <option value="ok">✅ OK</option>
-                    <option value="warning">⚠️ Faible</option>
-                    <option value="danger">🔴 Critique</option>
+                    <option value="faible">⚠️ Faible</option>
+                    <option value="critique">🔴 Critique</option>
                     <option value="rupture">💀 Rupture</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label>Recherche</label>
-                <input type="text" id="stock-recherche" placeholder="Nom du produit…" oninput="filtrerStocks()" />
+                <input type="text" id="filter-search" placeholder="Nom du produit…" />
             </div>
 
-            <button class="btn-refresh-stocks" onclick="chargerStocks()">
-                Actualiser
-            </button>
+            <button class="btn-primary w100 mt-1" id="appliquer-filtres">Appliquer</button>
+            <button class="btn-ghost w100 mt-05" id="btn-ajuster-stock">⚡ Ajustement Rapide</button>
 
             <!-- Ajustement manuel du stock -->
             <div class="ajustement-card">
@@ -88,8 +79,8 @@
                         <label>Motif</label>
                         <select id="ajust-motif" name="motif">
                             <option value="correction">Correction d'inventaire</option>
-                            <option value="casse">Casse / perte</option>
-                            <option value="offert">Offert / dégustation</option>
+                            <option value="perime">Péremption / Dommage</option>
+                            <option value="don">Don / Échantillon</option>
                             <option value="autre">Autre</option>
                         </select>
                     </div>
@@ -110,21 +101,22 @@
                 </div>
 
                 <div class="stocks-table-container">
-                    <table class="stocks-table" id="table-stocks">
+                    <table class="stocks-table" id="stocks-table">
                         <thead>
                             <tr>
                                 <th>Produit</th>
-                                <th>Société</th>
+                                <th>Catégorie</th>
                                 <th>Stock actuel</th>
                                 <th>Seuil alerte</th>
-                                <th>État</th>
-                                <th>Progression</th>
-                                <th>Prix vente</th>
+                                <th>Prix Achat</th>
+                                <th>Prix Vente</th>
+                                <th>Valeur</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr class="loading-row">
-                                <td colspan="7">
+                                <td colspan="8">
                                     <div class="loading-spinner">Chargement des stocks...</div>
                                 </td>
                             </tr>
@@ -143,27 +135,82 @@
                     <canvas id="chart-stocks-bas"></canvas>
                 </div>
             </div>
+                <!-- Historique (Attendu par stocks.js) -->
+                <div class="card mt-1">
+                    <div class="card-header">
+                        <h3>Historique des mouvements</h3>
+                        <div class="header-actions">
+                            <select id="histo-period" class="select-sm">
+                                <option value="7">7 jours</option>
+                                <option value="30">30 jours</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="histo-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Produit</th>
+                                    <th>Mouv.</th>
+                                    <th>Motif</th>
+                                    <th>Par</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ajustement (Attendu par stocks.js) -->
+<div class="modal" id="ajustement-modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="ajustement-modal-title">Ajuster le stock</h3>
+            <button class="modal-close" data-dismiss="modal">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="product-info-banner">
+                <span id="ajustement-product-name">Nom du produit</span>
+                <span id="ajustement-product-stock">Stock actuel</span>
+            </div>
+            <form id="ajustement-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Type d'opération</label>
+                        <select id="ajustement-type" required>
+                            <option value="ajout">➕ Ajout au stock</option>
+                            <option value="retrait">➖ Retrait du stock</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantité</label>
+                        <input type="number" id="ajustement-quantite" min="1" required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Raison / Motif</label>
+                    <input type="text" id="ajustement-raison" placeholder="Ex: Correction inventaire, Casse..." required />
+                </div>
+                <div class="nouveau-stock-preview">
+                    Nouveau stock estimé : <strong id="nouveau-stock">—</strong>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" data-dismiss="modal">Annuler</button>
+            <button type="submit" form="ajustement-form" class="btn btn-primary">Confirmer l'ajustement</button>
         </div>
     </div>
 </div>
 
 {% endblock %}
 
-{% block extra_scripts %}
+{% block scripts %}
 <script src="{{ url_for('static', filename='js/stocks.js') }}"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        chargerStocks();
-        chargerProduitsSelectStock();
-
-        // Rafraîchissement automatique toutes les 60 secondes
-        setInterval(() => {
-            chargerStocks();
-            if (typeof chargerGraphStocksBas === 'function') {
-                chargerGraphStocksBas();
-            }
-        }, 60000);
-    });
-</script>
 {% endblock %}

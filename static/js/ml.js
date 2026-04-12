@@ -456,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `previsions_bar_${new Date().toISOString().split('T')[0]}.pdf`;
+            a.download = `previsions_pharma_${new Date().toISOString().split('T')[0]}.pdf`;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -485,11 +485,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getSocieteColor(societe) {
         const colors = {
-            'SABC': '#E63946',
-            'UCB': '#F4A261',
-            'Guinness': '#2EC4B6',
-            'Sources du Pays': '#4A90D9',
-            'Autres Produits': '#9B5DE5'
+            'Antibiotiques': '#2A9D8F',
+            'Analgésiques': '#E76F51',
+            'Vitamines': '#F4A261',
+            'Dermatologie': '#E9C46A',
+            'Matériel Médical': '#264653'
         };
         return colors[societe] || '#A8A09A';
     }

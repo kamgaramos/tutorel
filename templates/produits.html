@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Produits — BarManager CM{% endblock %}
+{% block title %}Produits — Pharma Moderne{% endblock %}
 {% block page_title %}Produits{% endblock %}
 
 {% block content %}
 
 <div class="produits-container">
 
-    <!-- ── Formulaire ajout ── -->
-    <div class="produit-form-card">
+    <!-- ── Formulaire ajout (Masqué pour employé) ── -->
+    <div class="produit-form-card" {% if session.get('role') != 'admin' %}style="display: none;"{% endif %}>
         <div class="card-header">
             <h2>➕ Ajouter un produit</h2>
         </div>
@@ -18,17 +18,18 @@
                 <div class="form-group">
                     <label for="prod-societe">Société</label>
                     <select id="prod-societe" name="societe" required>
-                        <option value="SABC">SABC</option>
-                        <option value="UCB">UCB</option>
-                        <option value="Guinness">Guinness</option>
-                        <option value="Sources du Pays">Sources du Pays</option>
-                        <option value="Autres Produits">Autres Produits</option>
+                        <option value="Antibiotiques">Antibiotiques</option>
+                        <option value="Analgésiques">Analgésiques</option>
+                        <option value="Vitamines">Vitamines</option>
+                        <option value="Dermatologie">Dermatologie</option>
+                        <option value="Matériel Médical">Matériel Médical</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="prod-nom">Nom du produit</label>
-                    <input type="text" id="prod-nom" name="nom" placeholder="Ex: Mutzig 65cl" required />
+                    <input type="text" id="prod-nom" name="nom" placeholder="Ex: Amoxicilline 500mg" list="liste-suggestions-noms" required />
+                    <datalist id="liste-suggestions-noms"></datalist>
                 </div>
 
                 <div class="form-group">
@@ -44,11 +45,11 @@
                 <div class="form-group">
                     <label for="prod-unite">Unité</label>
                     <select id="prod-unite" name="unite">
-                        <option value="bouteille">Bouteille</option>
-                        <option value="canette">Canette</option>
-                        <option value="pack">Pack</option>
-                        <option value="litre">Litre</option>
-                        <option value="verre">Verre</option>
+                        <option value="comprimé">Comprimé</option>
+                        <option value="gélule">Gélule</option>
+                        <option value="sirop">Sirop</option>
+                        <option value="crème">Crème</option>
+                        <option value="unité">Unité</option>
                         <option value="autre">Autre</option>
                     </select>
                 </div>
@@ -96,11 +97,11 @@
                 <label>Société</label>
                 <select id="filtre-societe" onchange="filtrerProduits()">
                     <option value="">Toutes</option>
-                    <option value="SABC">SABC</option>
-                    <option value="UCB">UCB</option>
-                    <option value="Guinness">Guinness</option>
-                    <option value="Sources du Pays">Sources du Pays</option>
-                    <option value="Autres Produits">Autres Produits</option>
+                    <option value="Antibiotiques">Antibiotiques</option>
+                    <option value="Analgésiques">Analgésiques</option>
+                    <option value="Vitamines">Vitamines</option>
+                    <option value="Dermatologie">Dermatologie</option>
+                    <option value="Matériel Médical">Matériel Médical</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -112,11 +113,11 @@
         <!-- Tabs sociétés (TOUS IDENTIQUES) -->
         <div class="societe-tabs">
             <button class="societe-tab tous active" data-societe="tous">Tous</button>
-            <button class="societe-tab sabc" data-societe="sabc">SABC</button>
-            <button class="societe-tab ucb" data-societe="ucb">UCB</button>
-            <button class="societe-tab guinness" data-societe="guinness">GUINNESS</button>
-            <button class="societe-tab sources" data-societe="sources">SOURCES</button>
-            <button class="societe-tab autres" data-societe="autres">AUTRES</button>
+            <button class="societe-tab antibio" data-societe="antibiotiques">Antibiotiques</button>
+            <button class="societe-tab analges" data-societe="analgésiques">Analgésiques</button>
+            <button class="societe-tab vitamines" data-societe="vitamines">Vitamines</button>
+            <button class="societe-tab dermato" data-societe="dermatologie">Dermatologie</button>
+            <button class="societe-tab materiel" data-societe="materiel">Matériel</button>
         </div>
     </div>
 
@@ -128,16 +129,16 @@
                     <tr>
                         <th>Produit</th>
                         <th>Société</th>
-                        <th>Prix Achat</th>
+                        {% if session.get('role') == 'admin' %}<th>Prix Achat</th>{% endif %}
                         <th>Prix Vente</th>
-                        <th>Marge</th>
+                        {% if session.get('role') == 'admin' %}<th>Marge</th>{% endif %}
                         <th>Unité</th>
-                        <th>Actions</th>
+                        {% if session.get('role') == 'admin' %}<th>Actions</th>{% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     <tr class="loading-row">
-                        <td colspan="7" class="empty-table">
+                        <td colspan="{% if session.get('role') == 'admin' %}7{% else %}4{% endif %}" class="empty-table">
                             <div class="loading-spinner">Chargement des produits...</div>
                         </td>
                     </tr>
@@ -182,11 +183,11 @@
                     <div class="form-group">
                         <label>Unité</label>
                         <select id="edit-unite" name="unite">
-                            <option value="bouteille">Bouteille</option>
-                            <option value="canette">Canette</option>
-                            <option value="pack">Pack</option>
-                            <option value="litre">Litre</option>
-                            <option value="verre">Verre</option>
+                            <option value="comprimé">Comprimé</option>
+                            <option value="gélule">Gélule</option>
+                            <option value="sirop">Sirop</option>
+                            <option value="crème">Crème</option>
+                            <option value="unité">Unité</option>
                             <option value="autre">Autre</option>
                         </select>
                     </div>
@@ -202,95 +203,146 @@
 
 {% endblock %}
 
-{% block extra_scripts %}
+{% block scripts %}
 <script>
+    const userRole = "{{ session.get('role', 'employe') }}";
     document.addEventListener('DOMContentLoaded', () => {
         chargerProduits();
 
         // Aperçu marge en temps réel
         ['prod-prix-achat', 'prod-prix-vente'].forEach(id => {
-            document.getElementById(id).addEventListener('input', mettreAJourMarge);
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', mettreAJourMarge);
         });
 
-        // Gestion des tabs sociétés
+        // Gestion du formulaire d'ajout
+        const formAjout = document.getElementById('form-ajout-produit');
+        if (formAjout) {
+            formAjout.addEventListener('submit', function(e) {
+                e.preventDefault();
+                ajouterProduit(new FormData(this));
+            });
+        }
+
+        // Gestion des suggestions de noms par société
+        const selectSociete = document.getElementById('prod-societe');
+        if (selectSociete) {
+            selectSociete.addEventListener('change', mettreAJourSuggestionsNoms);
+        }
+
+        // Gestion des tabs catégories
         document.querySelectorAll('.societe-tab').forEach(tab => {
             tab.addEventListener('click', function () {
-                // Retirer la classe active de tous les tabs
                 document.querySelectorAll('.societe-tab').forEach(t => t.classList.remove('active'));
-                // Ajouter la classe active au tab cliqué
                 this.classList.add('active');
-                // Filtrer les produits par société
                 const societe = this.dataset.societe;
                 filtrerParSociete(societe);
             });
         });
     });
 
-    function chargerProduits() {
-        // Simulation de chargement
-        setTimeout(() => {
-            const tbody = document.querySelector('#table-produits tbody');
-            tbody.innerHTML = `
-                <tr>
-                    <td><strong>Castel Beer</strong></td>
-                    <td><span class="badge sabc">SABC</span></td>
-                    <td class="prix-achat">350 FCFA</td>
-                    <td class="prix-vente">600 FCFA</td>
+    let tousLesProduits = [];
+
+    function mettreAJourSuggestionsNoms() {
+        const societe = document.getElementById('prod-societe').value;
+        const datalist = document.getElementById('liste-suggestions-noms');
+        if (!datalist) return;
+
+        // Filtrer les produits existants de cette société
+        const produitsFiltres = tousLesProduits.filter(p => p.societe === societe);
+        
+        // Extraire les noms uniques
+        const nomsRemarquables = [...new Set(produitsFiltres.map(p => p.nom))];
+        
+        datalist.innerHTML = nomsRemarquables.map(nom => `<option value="${nom}">`).join('');
+    }
+
+    async function chargerProduits() {
+        const tbody = document.querySelector('#table-produits tbody');
+        const cols = (userRole === 'admin') ? 7 : 4;
+        tbody.innerHTML = '<tr><td colspan="' + cols + '" class="loading-row"><div class="loading-spinner">Chargement des produits...</div></td></tr>';
+
+        try {
+            const response = await fetch('/api/produits');
+            const data = await response.json();
+
+            if (data.success) {
+                tousLesProduits = data.produits;
+                afficherTableauProduits(tousLesProduits);
+                mettreAJourSuggestionsNoms(); // Charger les suggestions initiales
+            } else {
+                afficherNotif('Erreur : ' + data.message, 'error');
+            }
+        } catch (error) {
+            console.error('Erreur réseau:', error);
+            afficherNotif('Erreur réseau lors du chargement', 'error');
+        }
+    }
+
+    function afficherTableauProduits(produits) {
+        const tbody = document.querySelector('#table-produits tbody');
+        const cols = (userRole === 'admin') ? 7 : 4;
+        if (!produits.length) {
+            tbody.innerHTML = '<tr><td colspan="' + cols + '" class="empty-table">Aucun produit trouvé</td></tr>';
+            document.getElementById('count-produits').textContent = '0 produit';
+            return;
+        }
+
+        tbody.innerHTML = produits.map(p => {
+            const marge = p.prix_vente - p.prix_achat;
+            const margeClass = marge > 500 ? 'high' : marge > 200 ? 'medium' : 'low';
+            const societeSlug = p.societe.toLowerCase().replace(/ /g, '-');
+
+            return `
+                <tr data-societe="${p.societe.toLowerCase()}">
+                    <td><strong>${p.nom}</strong></td>
+                    <td><span class="badge ${societeSlug}">${p.societe}</span></td>
+                    ${userRole === 'admin' ? '<td class="prix-achat">' + formaterFCFA(p.prix_achat) + '</td>' : ''}
+                    <td class="prix-vente">${formaterFCFA(p.prix_vente)}</td>
+                    ${userRole === 'admin' ? `
                     <td>
                         <div class="marge-cell">
-                            <span class="marge-indicator high"></span>
-                            <span class="marge-value high">250 FCFA</span>
+                            <span class="marge-indicator ${margeClass}"></span>
+                            <span class="marge-value ${margeClass}">${formaterFCFA(marge)}</span>
                         </div>
-                    </td>
-                    <td><span class="unit-badge">Bouteille</span></td>
+                    </td>` : ''}
+                    <td><span class="unit-badge">${p.unite}</span></td>
+                    ${userRole === 'admin' ? `
                     <td>
                         <div class="table-actions">
-                            <button class="btn-action edit" onclick="editerProduit(1)">✏️</button>
-                            <button class="btn-action delete" onclick="supprimerProduit(1)">🗑️</button>
+                            <button class="btn-action edit" onclick="editerProduit(${p.id})">✏️</button>
+                            <button class="btn-action delete" onclick="supprimerProduit(${p.id})">🗑️</button>
                         </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Guinness</strong></td>
-                    <td><span class="badge guinness">Guinness</span></td>
-                    <td class="prix-achat">500 FCFA</td>
-                    <td class="prix-vente">900 FCFA</td>
-                    <td>
-                        <div class="marge-cell">
-                            <span class="marge-indicator high"></span>
-                            <span class="marge-value high">400 FCFA</span>
-                        </div>
-                    </td>
-                    <td><span class="unit-badge">Bouteille</span></td>
-                    <td>
-                        <div class="table-actions">
-                            <button class="btn-action edit" onclick="editerProduit(2)">✏️</button>
-                            <button class="btn-action delete" onclick="supprimerProduit(2)">🗑️</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>Tangui</strong></td>
-                    <td><span class="badge sources">Sources du Pays</span></td>
-                    <td class="prix-achat">150 FCFA</td>
-                    <td class="prix-vente">300 FCFA</td>
-                    <td>
-                        <div class="marge-cell">
-                            <span class="marge-indicator medium"></span>
-                            <span class="marge-value medium">150 FCFA</span>
-                        </div>
-                    </td>
-                    <td><span class="unit-badge">Bouteille</span></td>
-                    <td>
-                        <div class="table-actions">
-                            <button class="btn-action edit" onclick="editerProduit(3)">✏️</button>
-                            <button class="btn-action delete" onclick="supprimerProduit(3)">🗑️</button>
-                        </div>
-                    </td>
+                    </td>` : ''}
                 </tr>
             `;
-            document.getElementById('count-produits').textContent = '3 produits';
-        }, 1000);
+        }).join('');
+
+        document.getElementById('count-produits').textContent = produits.length + ' produit(s)';
+    }
+
+    async function ajouterProduit(formData) {
+        const data = Object.fromEntries(formData.entries());
+        
+        try {
+            const response = await fetch('/api/produits/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const res = await response.json();
+
+            if (res.success) {
+                afficherNotif('Produit ajouté avec succès', 'success');
+                document.getElementById('form-ajout-produit').reset();
+                document.getElementById('marge-preview').style.display = 'none';
+                chargerProduits();
+            } else {
+                afficherNotif('Erreur : ' + res.message, 'error');
+            }
+        } catch (error) {
+            afficherNotif('Erreur réseau lors de l\'ajout', 'error');
+        }
     }
 
     function mettreAJourMarge() {
@@ -310,31 +362,85 @@
     }
 
     function filtrerParSociete(societe) {
-        console.log('Filtre par société:', societe);
-        // Implémentez votre logique de filtrage ici
+        if (societe === 'tous') {
+            afficherTableauProduits(tousLesProduits);
+        } else {
+            const filtered = tousLesProduits.filter(p => p.societe.toLowerCase() === societe.toLowerCase());
+            afficherTableauProduits(filtered);
+        }
     }
 
     function filtrerProduits() {
-        const societe = document.getElementById('filtre-societe').value;
+        const societe = document.getElementById('filtre-societe').value.toLowerCase();
         const recherche = document.getElementById('recherche-produit').value.toLowerCase();
-        console.log('Filtres:', { societe, recherche });
-        // Implémentez votre logique de filtrage ici
+
+        const filtered = tousLesProduits.filter(p => {
+            const matchS = societe === '' || p.societe.toLowerCase() === societe;
+            const matchR = p.nom.toLowerCase().includes(recherche);
+            return matchS && matchR;
+        });
+
+        afficherTableauProduits(filtered);
+    }
+
+    async function supprimerProduit(id) {
+        if (!confirm('Supprimer ce produit ?')) return;
+
+        try {
+            const response = await fetch(`/api/produits/${id}`, { method: 'DELETE' });
+            const res = await response.json();
+            if (res.success) {
+                afficherNotif('Produit supprimé', 'success');
+                chargerProduits();
+            } else {
+                afficherNotif('Erreur : ' + res.message, 'error');
+            }
+        } catch (error) {
+            afficherNotif('Erreur réseau lors de la suppression', 'error');
+        }
     }
 
     function editerProduit(id) {
+        const p = tousLesProduits.find(item => item.id == id);
+        if (!p) return;
+
+        document.getElementById('edit-id').value = p.id;
+        document.getElementById('edit-nom').value = p.nom;
+        document.getElementById('edit-prix-achat').value = p.prix_achat;
+        document.getElementById('edit-prix-vente').value = p.prix_vente;
+        document.getElementById('edit-seuil').value = p.seuil_alerte;
+        document.getElementById('edit-unite').value = p.unite;
+
         document.getElementById('modal-edit').style.display = 'flex';
-        // Implémentez le chargement des données du produit ici
     }
+
+    document.getElementById('form-edit-produit').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        const id = data.id;
+
+        try {
+            const response = await fetch(`/api/produits/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const res = await response.json();
+            if (res.success) {
+                afficherNotif('Produit modifié avec succès', 'success');
+                fermerModal();
+                chargerProduits();
+            } else {
+                afficherNotif('Erreur : ' + res.message, 'error');
+            }
+        } catch (error) {
+            afficherNotif('Erreur réseau lors de la modification', 'error');
+        }
+    });
 
     function fermerModal() {
         document.getElementById('modal-edit').style.display = 'none';
-    }
-
-    function supprimerProduit(id) {
-        if (confirm('Supprimer ce produit ?')) {
-            console.log('Suppression produit:', id);
-            // Implémentez la suppression ici
-        }
     }
 </script>
 {% endblock %}

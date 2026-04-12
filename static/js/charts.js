@@ -24,11 +24,11 @@ const COULEURS = {
 };
 
 const COULEURS_SOCIETES = {
-  'SABC':             '#E63946',
-  'UCB':              '#F4A261',
-  'Guinness':         '#2EC4B6',
-  'Sources du Pays':  '#4A90D9',
-  'Autres Produits':  '#9B5DE5',
+  'Antibiotiques':    '#2A9D8F',
+  'Analgésiques':    '#E76F51',
+  'Vitamines':       '#F4A261',
+  'Dermatologie':    '#E9C46A',
+  'Matériel Médical': '#264653',
 };
 
 /* Registre des instances Chart pour destruction propre */

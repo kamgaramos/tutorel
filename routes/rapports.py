@@ -15,7 +15,7 @@ rapports_bp = Blueprint('rapports', __name__)
 
 @rapports_bp.route('/journalier', methods=['GET'])
 def rapport_journalier():
-    """Génère le rapport PDF journalier pour le barman"""
+    """Génère le rapport PDF journalier pour le pharmacien"""
     try:
         date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
         

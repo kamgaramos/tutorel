@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Employés - {{ nom_bar }}{% endblock %}
+
+{% block page_title %}Gestion du Personnel{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+        
+        <!-- Liste des employés -->
+        <div style="flex: 2;">
+            <div class="table-card">
+                <div class="table-header">
+                    <h3>👥 Membres de l'équipe</h3>
+                    <div class="table-actions">
+                        <span class="badge-count">{{ utilisateurs|length }} profils</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Rôle</th>
+                                <th>Code PIN</th>
+                                <th>Nb Ventes</th>
+                                <th>CA Généré</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in utilisateurs %}
+                            <tr>
+                                <td><strong>{{ u.nom }}</strong></td>
+                                <td>
+                                    {% if u.role == 'admin' %}
+                                    <span class="badge badge-heineken">Administrateur</span>
+                                    {% else %}
+                                    <span class="badge badge-castel">Caissier</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if u.code_pin %}
+                                    <span style="font-family: monospace; background: #eee; padding: 2px 5px; border-radius: 4px;">****</span>
+                                    {% else %}
+                                    <span style="color: #999;">Aucun</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ u.nb_ventes }}</td>
+                                <td style="color: var(--primary); font-weight: bold;">{{ '{:,}'.format(u.total_vendu).replace(',', ' ') }} FCFA</td>
+                                <td>
+                                    <button class="btn-action delete" onclick="supprimerEmploye({{ u.id }})" {% if session.user_id == u.id %}disabled style="opacity: 0.5; cursor: not-allowed;" title="Vous ne pouvez pas vous supprimer"{% endif %}>🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulaire d'ajout -->
+        <div style="flex: 1;">
+            <div class="table-card">
+                <div class="table-header">
+                    <h3>➕ Nouvel Employé</h3>
+                </div>
+                <div style="padding: 20px;">
+                    <form id="form-employe" onsubmit="ajouterEmploye(event)">
+                        <div class="form-group">
+                            <label>Nom complet ou Pseudo</label>
+                            <input type="text" id="emp-nom" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px;">
+                        </div>
+
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>Rôle</label>
+                            <select id="emp-role" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px;">
+                                <option value="employe">Vendeur / Caissier</option>
+                                <option value="admin">Administrateur</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>Code PIN (Facultatif pour caissier)</label>
+                            <input type="password" id="emp-pin" placeholder="Ex: 1234" maxlength="10" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; font-family: monospace;">
+                        </div>
+
+                        <button type="submit" style="width: 100%; margin-top: 20px; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                            Créer le profil
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function ajouterEmploye(e) {
+        e.preventDefault();
+        const data = {
+            nom: document.getElementById('emp-nom').value,
+            role: document.getElementById('emp-role').value,
+            code_pin: document.getElementById('emp-pin').value
+        };
+
+        if(data.role === 'admin' && !data.code_pin) {
+            alert('Un administrateur doit obligatoirement avoir un code PIN !');
+            return;
+        }
+
+        try {
+            const res = await fetch('/admin/api/employes', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const out = await res.json();
+            if(out.success) {
+                window.location.reload();
+            } else {
+                alert('Erreur: ' + out.message);
+            }
+        } catch(err) {
+            alert('Erreur réseau');
+        }
+    }
+
+    async function supprimerEmploye(id) {
+        if(!confirm("Voulez-vous vraiment supprimer ce compte ?")) return;
+        
+        try {
+            const res = await fetch('/admin/api/employes/'+id, {
+                method: 'DELETE'
+            });
+            const out = await res.json();
+            if(out.success) {
+                window.location.reload();
+            } else {
+                alert('Erreur: ' + out.message);
+            }
+        } catch(err) {
+            alert('Erreur réseau');
+        }
+    }
+</script>
+{% endblock %}
