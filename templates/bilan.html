@@ -32,6 +32,9 @@
                 <button class="btn btn-primary" onclick="chargerBilan()">
                     Charger le Bilan
                 </button>
+                <button class="btn btn-secondary" style="margin-left:8px;" onclick="telechargerBilan()">
+                    Télécharger PDF
+                </button>
             </div>
         </div>
     </div>
@@ -179,7 +182,7 @@
         const fin = document.getElementById('bilan-date-fin').value;
         if (!debut || !fin) { afficherNotif('Sélectionne une période', 'warning'); return; }
 
-        fetch(`/api/bilan?debut=${debut}&fin=${fin}`)
+        fetch(`/api/rapports/bilan/data?debut=${debut}&fin=${fin}`)
             .then(r => r.json())
             .then(data => {
                 if (!data.success) { afficherNotif('Erreur chargement bilan', 'error'); return; }
@@ -230,6 +233,14 @@
         <td><strong>${l.qte}</strong></td>
         <td>${formaterFCFA(l.revenus)}</td>
       </tr>`).join('') || '<tr><td colspan="4" class="table-empty">—</td></tr>';
+    }
+
+    function telechargerBilan() {
+        const debut = document.getElementById('bilan-date-debut').value;
+        const fin = document.getElementById('bilan-date-fin').value;
+        if (!debut || !fin) { afficherNotif('Sélectionne une période', 'warning'); return; }
+        // Ouvre le endpoint PDF dans un nouvel onglet
+        window.open(`/api/rapports/bilan?debut=${debut}&fin=${fin}`, '_blank');
     }
 </script>
 {% endblock %}

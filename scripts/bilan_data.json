@@ -1,0 +1,44 @@
+{
+  "benefice": 13000,
+  "couts": 0,
+  "debut": "2026-05-20",
+  "evolution_journaliere": [
+    {
+      "articles": 8,
+      "benefice": 13000,
+      "date": "2026-05-26",
+      "nb_ventes": 3,
+      "revenu": 32000
+    }
+  ],
+  "fin": "2026-05-26",
+  "nb_transactions": 3,
+  "par_societe": [
+    {
+      "revenus": 32000,
+      "societe": "Antibiotiques"
+    }
+  ],
+  "revenus": 32000,
+  "success": true,
+  "top_produits": [
+    {
+      "produit": "Azithromycine 500mg",
+      "qte": 4,
+      "revenu": 20000,
+      "societe": "Antibiotiques"
+    },
+    {
+      "produit": "Ciprofloxacine 500mg",
+      "qte": 2,
+      "revenu": 7000,
+      "societe": "Antibiotiques"
+    },
+    {
+      "produit": "Amoxicilline 500mg",
+      "qte": 2,
+      "revenu": 5000,
+      "societe": "Antibiotiques"
+    }
+  ]
+}

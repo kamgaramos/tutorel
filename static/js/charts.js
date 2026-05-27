@@ -420,17 +420,17 @@ function afficherGraphPrevision(historique, prevision) {
 
   const dataHist = historique.map(d => d.revenu);
   const dataPrev = [
-    ...new Array(historique.length - 1).fill(null),
+    ...new Array(Math.max(0, historique.length - 1)).fill(null),
     historique[historique.length - 1]?.revenu ?? null,
     ...prevision.map(d => d.revenu)
   ];
   const dataHaut = [
-    ...new Array(historique.length - 1).fill(null),
+    ...new Array(Math.max(0, historique.length - 1)).fill(null),
     null,
     ...prevision.map(d => d.revenu_haut)
   ];
   const dataBas = [
-    ...new Array(historique.length - 1).fill(null),
+    ...new Array(Math.max(0, historique.length - 1)).fill(null),
     null,
     ...prevision.map(d => d.revenu_bas)
   ];
@@ -442,7 +442,7 @@ function afficherGraphPrevision(historique, prevision) {
       datasets: [
         {
           label:           'Historique',
-          data:            [...dataHist, ...new Array(labelsPrev.length).fill(null)],
+          data:            [...dataHist, ...new Array(Math.max(0, labelsPrev.length)).fill(null)],
           borderColor:     COULEURS.warm,
           backgroundColor: 'rgba(244,162,97,0.1)',
           borderWidth:     2.5,

@@ -23,6 +23,9 @@
                 <button class="btn btn-primary" onclick="genererRapport()">
                      Générer le Rapport
                 </button>
+                <button class="btn btn-secondary" style="margin-left:8px;" onclick="telechargerRapport()">
+                    Télécharger PDF
+                </button>
             </div>
         </div>
     </div>
@@ -197,10 +200,10 @@
         const date = document.getElementById('rapport-date').value;
         if (!date) { afficherNotif('Sélectionne une date', 'warning'); return; }
 
-        fetch(`/api/rapport-journalier?date=${date}`)
+        fetch(`/api/rapports/journalier/data?date=${date}`)
             .then(r => r.json())
             .then(data => {
-                if (!data.success) { afficherNotif('Erreur génération rapport', 'error'); return; }
+                if (!data.success) { afficherNotif(data.message || 'Erreur génération rapport', 'error'); return; }
                 afficherRapport(data);
             });
     }
@@ -265,6 +268,13 @@
         <td>${s.qte_totale}</td>
         <td class="bold">${formaterFCFA(s.revenus)}</td>
       </tr>`).join('') || '<tr><td colspan="4" class="table-empty">—</td></tr>';
+    }
+
+    function telechargerRapport() {
+        const date = document.getElementById('rapport-date').value;
+        if (!date) { afficherNotif('Sélectionne une date', 'warning'); return; }
+        // Ouvre le endpoint PDF dans un nouvel onglet (le backend retourne un PDF)
+        window.open(`/api/rapports/journalier?date=${date}`, '_blank');
     }
 </script>
 {% endblock %}

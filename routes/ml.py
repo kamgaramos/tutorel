@@ -12,8 +12,11 @@ ml_bp = Blueprint('ml', __name__)
 
 def generer_prevision_simple(historique, jours=7):
     """Génère des prévisions simples (simulation pour l'instant)"""
-    if not historique or len(historique) < 3:
+    # Évite un retour vide quand il y a peu de données.
+    # On peut faire des prévisions même avec 1-2 points (tendance supposée nulle).
+    if not historique or len(historique) < 1:
         return []
+
     
     # Calculer la tendance linéaire basique
     x = np.arange(len(historique))
@@ -51,29 +54,49 @@ def generer_prevision_simple(historique, jours=7):
 
 @ml_bp.route('/forecast', methods=['GET'])
 def get_forecast():
-    """Retourne les prévisions de ventes"""
+    """Retourne les prévisions de ventes.
+    Supporte options facultatives: societe (nom) et produit (nom)
+    """
     try:
         jours = request.args.get('days', 7, type=int)
         
         conn = get_db()
         cursor = conn.cursor()
         
+        societe = request.args.get('societe', '', type=str)
+        produit = request.args.get('produit', '', type=str)
+
+        where = " WHERE v.date_vente >= DATE('now', '-90 days') "
+        params = []
+
+        # Filter société (par nom, et donc via produits.societe)
+        if societe:
+            where += " AND p.societe = ? "
+            params.append(societe)
+
+        # Filter produit (par nom, valeur du select)
+        if produit:
+            where += " AND p.nom = ? "
+            params.append(produit)
+
         # Récupérer l'historique
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT 
-                DATE(date_vente) as date,
-                COALESCE(SUM(quantite * prix_unitaire), 0) as revenu
-            FROM ventes
-            WHERE date_vente >= DATE('now', '-30 days')
-            GROUP BY DATE(date_vente)
+                DATE(v.date_vente) as date,
+                COALESCE(SUM(v.quantite * v.prix_unitaire), 0) as revenu
+            FROM ventes v
+            JOIN produits p ON v.produit_id = p.id
+            {where}
+            GROUP BY DATE(v.date_vente)
             ORDER BY date ASC
-        ''')
-        
+        ''', params)
+
         historique = cursor.fetchall()
         historique_list = [dict(h) for h in historique]
-        
+
         # Générer les prévisions
         previsions = generer_prevision_simple(historique_list, jours)
+
         
         conn.close()
         

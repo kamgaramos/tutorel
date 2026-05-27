@@ -6,10 +6,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     // ========== ÉLÉMENTS DOM ==========
     // Contrôles
+    // (fallback: certains IDs existent dans templates/tendances.html)
     const periodSelect = document.getElementById('ml-period');
     const generateBtn = document.getElementById('ml-generate-btn');
     const refreshBtn = document.getElementById('ml-refresh-btn');
     const exportBtn = document.getElementById('ml-export-btn');
+
+    const societeSelect = document.getElementById('ml-societe');
+    const produitSelect = document.getElementById('ml-produit');
+    const horizonSelect = document.getElementById('ml-horizon');
+    const lancerBtn = document.getElementById('btn-lancer-ml');
+
     
     // Chargeurs
     const predictionLoader = document.getElementById('prediction-loader');
@@ -60,8 +67,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Chargement initial
-    generateAllPredictions();
+    // Chargement initial: ne pas auto-lancer si l’UI ne fournit pas les contrôles attendus.
+    // Sur templates/tendances.html, on utilise plutôt le bouton lancerPrevision() (ml_filter_support.js).
+    if (generateBtn && periodSelect) {
+        generateAllPredictions();
+    }
+    
     
     // Rafraîchissement automatique toutes les 5 minutes
     setInterval(() => {

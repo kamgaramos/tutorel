@@ -64,7 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 appendMessage('ai', data.response, msgContainer);
             } else {
-                appendMessage('ai', 'Erreur technique.', msgContainer);
+                const msg = (data && data.message) ? data.message : (data && data.details && data.details.type ? data.details.type : 'Erreur technique.');
+                appendMessage('ai', msg, msgContainer);
             }
         })
         .catch(() => {

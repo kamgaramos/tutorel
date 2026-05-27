@@ -5,9 +5,14 @@ import random
 import time
 import re
 
+from services.llm_client import chat_completion, LLMClientError
+from config import LLM_MAX_TURNS, LLM_TEMPERATURE_DEFAULT
+
+
 ai_bp = Blueprint('ai', __name__)
 
 # Mappage des symptômes vers les conseils/produits
+# (gardé pour rétro-compatibilité UI, mais le endpoint '/chat' utilisera le LLM)
 SYMPTOMES = {
     "tête": "Pour les maux de tête, le <b>Paracétamol</b> est le premier choix. Si c'est une migraine forte, l'<b>Ibuprofène</b> peut aider, mais attention à le prendre pendant un repas.",
     "fièvre": "La fièvre se traite généralement avec du <b>Paracétamol</b>. Pensez aussi à bien vous hydrater et à ne pas trop vous couvrir.",
@@ -38,99 +43,62 @@ def chercher_produit_dans_db(nom_partiel):
 
 @ai_bp.route('/chat', methods=['POST'])
 def chat():
-    """Gère la conversation 'humaine' avec l'IA"""
+    """Conversation avec un LLM (ChatGPT / DeepSeek)."""
     try:
-        data = request.get_json()
-        message = data.get('message', '').strip().lower()
-        
+        data = request.get_json() or {}
+        message = (data.get('message') or '').strip()
+
         if not message:
             return jsonify({'success': False, 'message': 'Message vide'}), 400
 
-        # Récupérer le contexte du dernier médicament (via session simplifiée dans la réponse pour cet exemple)
-        # Note: session nécessite une SECRET_KEY dans app.py (déjà présente)
-        dernier_med = session.get('dernier_med')
+        # Historique conversation en session
+        # On stocke uniquement user/assistant pour éviter d'exploser.
+        history = session.get('ai_messages', [])
+        if not isinstance(history, list):
+            history = []
 
-        res = ""
+        # Limite taille: LLM_MAX_TURNS correspond à ~ (user+assistant) paires
+        max_msgs = max(2, LLM_MAX_TURNS * 2)
+        if len(history) > max_msgs:
+            history = history[-max_msgs:]
 
-        # 1. SALUTATIONS ET "YO"
-        if any(w in message for w in ["yo", "salut", "bonjour", "ca va", "ça va", "hello"]):
-            res = random.choice([
-                "Salut ! Comment puis-je t'aider aujourd'hui dans ta pharmacie ?",
-                "Bonjour ! Je suis prêt pour tes questions. Un produit à vérifier ou un conseil ?",
-                "Yo ! On checke quoi aujourd'hui ? Un prix, un stock, ou un symptôme ?"
-            ])
+        user_entry = {"role": "user", "content": message}
+        # Appel LLM (inclut le system prompt côté client)
+        res_text = chat_completion(message, history=history)
 
-        # 2. GESTION DES SYMPTÔMES (Ex: "et pour les maux de tête ?")
-        elif any(s in message for s in SYMPTOMES.keys()):
-            for s, conseil in SYMPTOMES.items():
-                if s in message:
-                    res = conseil
-                    break
-            # Si c'est un suivi ("et pour...")
-            if "et pour" in message or "aussi" in message or "ensuite" in message:
-                res = "En ce qui concerne ce symptôme, " + res.lower()
+        # MAJ historique
+        history.append(user_entry)
+        history.append({"role": "assistant", "content": res_text})
+        if len(history) > max_msgs:
+            history = history[-max_msgs:]
+        session['ai_messages'] = history
 
-        # 3. QUESTIONS SUR LE PRIX / STOCK
-        elif any(w in message for w in ["prix", "coûte", "cout", "tarif", "combien", "stock", "reste", "quantité", "ai-je"]):
-            # Chercher un nom de produit dans le message
-            m = re.search(r"(?:de|le|du|pour|reste|coûte|prix)\s+([a-z0-9àéèêëîïôûùç-]+)", message)
-            nom_produit = m.group(1) if m else None
-            
-            # Si pas de nom mais qu'on a un contexte
-            if not nom_produit and dernier_med:
-                nom_produit = dernier_med
-                res_intro = f"Pour le <b>{dernier_med.capitalize()}</b> dont on parlait : "
-            else:
-                res_intro = ""
-
-            if nom_produit:
-                p = chercher_produit_dans_db(nom_produit)
-                if p:
-                    session['dernier_med'] = p['nom'] # On mémorise le contexte
-                    qte = p['quantite'] or 0
-                    if any(w in message for w in ["prix", "coût", "tarif", "combien"]):
-                        res = res_intro + f"Le prix est de <b>{p['prix_vente']:,} FCFA</b> l'unité."
-                    else:
-                        res = res_intro + f"Il en reste <b>{qte}</b> en stock ({p['unite']})."
-                else:
-                    res = f"Je ne trouve pas de '{nom_produit}' dans la base. Tu es sûr du nom ?"
-            else:
-                res = "De quel médicament parles-tu exactement ? Donne-moi son nom pour que je regarde."
-
-        # 4. DOSAGE / CONSEILS PRÉCIS
-        elif any(w in message for w in ["dosage", "comment", "prendre", "utilisation"]):
-            if "paracétamol" in message or (dernier_med == "paracétamol" and "dosage" in message):
-                res = "Pour le <b>Paracétamol</b>, c'est 1g toutes les 6 heures maximum. Pas plus de 4g par jour sinon c'est dangereux pour le foie."
-            elif "amox" in message:
-                res = "L'<b>Amoxicilline</b> se prend généralement matin et soir. Il faut finir la boîte !"
-            elif "ibu" in message:
-                res = "L'<b>Ibuprofène</b>, c'est maximum 3 fois par jour, et toujours avec de la nourriture."
-            else:
-                res = "Pour le dosage, j'ai besoin du nom du produit. Sinon, la règle d'or : toujours demander au pharmacien (c'est toi !) ou lire la notice."
-
-        # 5. REMERCIEMENTS / FIN
-        elif any(w in message for w in ["merci", "super", "cool", "top", "ok", "d'accord"]):
-            res = random.choice([
-                "Pas de souci ! À ton service.",
-                "Je t'en prie. Autre chose ?",
-                "Nickel. Je suis là si tu as besoin d'un autre check."
-            ])
-
-        # 6. DEFAULT (ESSAYER D'ÊTRE PLUS HUMAIN)
-        else:
-            if dernier_med:
-                res = f"Je ne suis pas sûr... Tu veux qu'on continue sur le <b>{dernier_med}</b> ou on passe à autre chose ?"
-            else:
-                res = "Désolé, je n'ai pas bien saisi. Tu peux me demander le prix ou le stock d'un produit, ou me parler d'un symptôme (tête, ventre, etc.)."
-
+        # Petite note sécurité
+        # (Le prompt système fait déjà le nécessaire)
         return jsonify({
             'success': True,
-            'response': res,
+            'response': res_text,
             'timestamp': time.time()
         })
-        
+
+    except LLMClientError as e:
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'details': {
+                'type': e.__class__.__name__,
+            }
+        }), 500
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'details': {
+                'type': e.__class__.__name__,
+            }
+        }), 500
+
+
 
 @ai_bp.route('/suggest', methods=['GET'])
 def suggest():
